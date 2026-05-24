@@ -1,9 +1,20 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import type { TranslationKey } from '../shared/i18n';
 import HomePage from './pages/HomePage.vue';
 import OnboardingPage from './pages/OnboardingPage.vue';
 import RecipesPage from './pages/RecipesPage.vue';
 import RunsPage from './pages/RunsPage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string;
+    backTo?: string;
+    backLabel?: string;
+    backLabelKey?: TranslationKey;
+    root?: boolean;
+  }
+}
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -11,17 +22,29 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomePage
+      component: HomePage,
+      meta: {
+        title: 'Run',
+        root: true
+      }
     },
     {
       path: '/recipes',
       name: 'recipes',
-      component: RecipesPage
+      component: RecipesPage,
+      meta: {
+        title: 'Recipes',
+        root: true
+      }
     },
     {
       path: '/runs',
       name: 'runs',
-      component: RunsPage
+      component: RunsPage,
+      meta: {
+        title: 'History',
+        root: true
+      }
     },
     {
       path: '/data',
@@ -30,12 +53,21 @@ const router = createRouter({
     {
       path: '/settings',
       name: 'settings',
-      component: SettingsPage
+      component: SettingsPage,
+      meta: {
+        title: 'Settings',
+        backTo: '/',
+        backLabel: 'Run',
+        backLabelKey: 'nav.home'
+      }
     },
     {
       path: '/onboarding',
       name: 'onboarding',
-      component: OnboardingPage
+      component: OnboardingPage,
+      meta: {
+        title: 'Setup'
+      }
     }
   ]
 });

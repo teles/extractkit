@@ -112,7 +112,7 @@ async function restoreDefaults(): Promise<void> {
 
 async function runSetupAgain(): Promise<void> {
   await resetOnboarding();
-  await router.push('/onboarding');
+  await router.push({ path: '/onboarding', query: { returnTo: '/settings' } });
 }
 </script>
 

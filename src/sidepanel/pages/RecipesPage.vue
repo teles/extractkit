@@ -31,6 +31,13 @@ const importErrors = ref<string[]>([]);
 const searchText = ref('');
 const categoryFilter = ref<RecipeCategory | 'all'>('all');
 const activeBatch = computed(() => activeBatchFromList(batchRuns.value));
+const pageTitle = computed(() => {
+  if (!formOpen.value) {
+    return t('recipes.title');
+  }
+
+  return editingRecipe.value ? t('form.editRecipe') : t('form.newRecipe');
+});
 
 const filteredRecipes = computed(() => {
   const search = searchText.value.trim().toLowerCase();
@@ -53,6 +60,11 @@ onMounted(async () => {
 function openNewRecipe(): void {
   editingRecipe.value = null;
   formOpen.value = true;
+}
+
+function closeRecipeForm(): void {
+  formOpen.value = false;
+  editingRecipe.value = null;
 }
 
 function categoryLabel(category: RecipeCategory): string {
@@ -100,8 +112,7 @@ async function handleSave(recipe: Recipe): Promise<void> {
   }
 
   await saveRecipe(recipe);
-  formOpen.value = false;
-  editingRecipe.value = null;
+  closeRecipeForm();
   toastSuccess(t('toast.recipeSaved'));
 }
 
@@ -190,8 +201,16 @@ async function handleImport(event: Event): Promise<void> {
 
 <template>
   <section class="panel-stack">
-    <PageHeader :title="t('recipes.title')" :meta="`${recipes.length} ${t('common.local')}`" :icon="ScrollText" icon-tone="brand">
-      <template #actions>
+    <PageHeader
+      :title="pageTitle"
+      :meta="formOpen ? undefined : `${recipes.length} ${t('common.local')}`"
+      :icon="ScrollText"
+      icon-tone="brand"
+      :back-label="formOpen ? t('nav.recipes') : undefined"
+      :back-aria-label="formOpen ? t('nav.backToRecipes') : undefined"
+      @back="closeRecipeForm"
+    >
+      <template v-if="!formOpen" #actions>
         <Button size="xs" :disabled="importing" @click="openImportDialog">
           <Upload class="h-3.5 w-3.5" aria-hidden="true" />
           {{ importing ? t('recipes.importing') : t('recipes.import') }}
@@ -224,7 +243,7 @@ async function handleImport(event: Event): Promise<void> {
       v-if="formOpen"
       :recipe="editingRecipe"
       @save="handleSave"
-      @cancel="formOpen = false"
+      @cancel="closeRecipeForm"
     />
 
     <div v-else class="space-y-3">

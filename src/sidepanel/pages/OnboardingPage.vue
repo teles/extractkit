@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Check, ChevronRight } from '@lucide/vue';
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ArrowLeft, Check, ChevronRight } from '@lucide/vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
 import { ensureSelectedDefaultRecipes, getDefaultRecipes } from '../../shared/default-recipes';
@@ -19,6 +19,7 @@ const RECOMMENDED_IDS = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const { t } = useSettings();
 const { success: toastSuccess, info: toastInfo } = useToast();
 
@@ -26,6 +27,7 @@ const step = ref<1 | 2>(1);
 const installing = ref(false);
 const starterRecipes = ref<Recipe[]>([]);
 const selectedIds = ref<Set<string>>(new Set(RECOMMENDED_IDS));
+const returnTo = computed(() => internalPath(route.query.returnTo));
 
 onMounted(() => {
   const defaults = getDefaultRecipes();
@@ -51,13 +53,25 @@ function selectRecommended(): void {
   selectedIds.value = validRecommended;
 }
 
+function internalPath(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) {
+    return null;
+  }
+
+  return value;
+}
+
+function finishTarget(): string {
+  return returnTo.value ?? '/';
+}
+
 async function install(ids: string[]): Promise<void> {
   installing.value = true;
   try {
     await ensureSelectedDefaultRecipes(ids);
     await completeOnboarding(ids);
     toastSuccess(t('toast.starterInstalled'));
-    await router.replace('/');
+    await router.replace(finishTarget());
   } finally {
     installing.value = false;
   }
@@ -75,7 +89,7 @@ async function installRecommended(): Promise<void> {
 async function skip(): Promise<void> {
   await skipOnboarding();
   toastInfo(t('toast.setupSkipped'));
-  await router.replace('/');
+  await router.replace(finishTarget());
 }
 
 function getCategoryLabel(recipe: Recipe): string {
@@ -88,7 +102,17 @@ function getCategoryLabel(recipe: Recipe): string {
   <div class="flex min-h-screen flex-col bg-ink-50 dark:bg-ink-900">
     <!-- Header -->
     <header class="flex h-14 items-center border-b border-ink-200 bg-white px-4 dark:border-ink-800 dark:bg-ink-950">
-      <div class="flex min-w-0 items-center gap-2">
+      <RouterLink
+        v-if="returnTo"
+        :to="returnTo"
+        class="focus-ring -ml-2 inline-flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-ink-700 transition hover:bg-ink-100 hover:text-ink-900 dark:text-ink-100 dark:hover:bg-ink-800 dark:hover:text-ink-50"
+        :aria-label="t('nav.backToSettings')"
+      >
+        <ArrowLeft class="h-4 w-4 shrink-0" :stroke-width="2.2" aria-hidden="true" />
+        <span class="truncate">{{ t('nav.settings') }}</span>
+      </RouterLink>
+
+      <div v-else class="flex min-w-0 items-center gap-2">
         <img src="/icons/extractkit-icon.svg" alt="" class="h-7 w-7" />
         <span class="truncate text-lg font-semibold">
           <span class="text-ink-900 dark:text-ink-50">Extract</span><span class="text-brand-700 dark:text-brand-400">Kit</span>

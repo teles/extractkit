@@ -8,6 +8,11 @@ export type TranslationKey =
   | 'nav.data'
   | 'nav.settings'
   | 'nav.more'
+  | 'nav.back'
+  | 'nav.backToRun'
+  | 'nav.backToRecipes'
+  | 'nav.backToHistory'
+  | 'nav.backToSettings'
   | 'home.title'
   | 'home.description'
   | 'home.refresh'
@@ -378,6 +383,11 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'nav.data': 'History',
     'nav.settings': 'Settings',
     'nav.more': 'More',
+    'nav.back': 'Back',
+    'nav.backToRun': 'Back to Run',
+    'nav.backToRecipes': 'Back to Recipes',
+    'nav.backToHistory': 'Back to History',
+    'nav.backToSettings': 'Back to Settings',
     'home.title': 'Run',
     'home.description': 'Choose a compatible recipe and extract structured JSON from the active tab.',
     'home.refresh': 'Refresh',
@@ -747,6 +757,11 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'nav.data': 'Histórico',
     'nav.settings': 'Configurações',
     'nav.more': 'Mais',
+    'nav.back': 'Voltar',
+    'nav.backToRun': 'Voltar para Executar',
+    'nav.backToRecipes': 'Voltar para Receitas',
+    'nav.backToHistory': 'Voltar para Histórico',
+    'nav.backToSettings': 'Voltar para Configurações',
     'home.title': 'Execução',
     'home.description': 'Escolha uma receita compatível e extraia JSON estruturado da aba ativa.',
     'home.refresh': 'Atualizar',
