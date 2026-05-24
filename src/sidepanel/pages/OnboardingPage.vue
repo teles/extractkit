@@ -196,7 +196,7 @@ function getCategoryLabel(recipe: Recipe): string {
             <div class="min-w-0 flex-1">
               <div class="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span class="text-sm font-medium text-ink-900 dark:text-ink-50">{{ recipe.name }}</span>
-                <Badge variant="accent" size="xs">{{ getCategoryLabel(recipe) }}</Badge>
+                <Badge variant="category" size="xs">{{ getCategoryLabel(recipe) }}</Badge>
               </div>
               <p v-if="recipe.description" class="mt-0.5 text-xs leading-relaxed text-ink-500 dark:text-ink-400">
                 {{ recipe.description }}

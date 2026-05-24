@@ -8,6 +8,7 @@ import { useRecipes } from '../../composables/useRecipes';
 import { useRuns } from '../../composables/useRuns';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
+import { batchDisplayName } from '../../shared/batch-display';
 import type { TranslationKey } from '../../shared/i18n';
 import type { BatchRun, RecipeRun } from '../../shared/types';
 import Badge from '../components/Badge.vue';
@@ -46,6 +47,12 @@ const runsByBatchId = computed(() =>
 
     groups[run.batchId] = [...(groups[run.batchId] ?? []), run];
     return groups;
+  }, {})
+);
+const batchNamesById = computed(() =>
+  batchRuns.value.reduce<Record<string, string>>((names, batch) => {
+    names[batch.id] = displayBatchName(batch);
+    return names;
   }, {})
 );
 
@@ -90,7 +97,7 @@ async function exportRun(run: RecipeRun): Promise<void> {
 
 async function exportBatch(batch: BatchRun): Promise<void> {
   const batchRunsToExport = runs.value.filter((run) => run.batchId === batch.id);
-  await exportRuns(batchRunsToExport, recipes.value, `extractkit-${batch.name}`, [batch]);
+  await exportRuns(batchRunsToExport, recipes.value, `extractkit-${displayBatchName(batch)}`, [batch]);
   if (exportError.value) {
     toastError(t('toast.exportFailed'), exportError.value);
   } else {
@@ -138,6 +145,18 @@ function batchVariant(status: BatchRun['status']): 'neutral' | 'success' | 'warn
 
 function batchStatusLabel(status: BatchRun['status']): string {
   return t(`batch.status.${status}` as TranslationKey);
+}
+
+function displayBatchName(batch: Pick<BatchRun, 'name' | 'createdAt'> | null | undefined): string {
+  return batchDisplayName(batch, t('batch.batchRun'), preferences.value.locale);
+}
+
+function batchNameForRun(run: RecipeRun): string | undefined {
+  if (!run.batchId) {
+    return undefined;
+  }
+
+  return run.batchName?.trim() || batchNamesById.value[run.batchId] || t('batch.batchRun');
 }
 
 function formatDate(value: string | undefined): string {
@@ -231,6 +250,7 @@ function createBatchRun(): void {
           v-for="run in filteredRuns"
           :key="run.id"
           :run="run"
+          :batch-name="batchNameForRun(run)"
           @export="exportRun"
           @delete="handleDelete"
         />
@@ -272,14 +292,16 @@ function createBatchRun(): void {
 
               <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <h2 class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{{ batch.name }}</h2>
+                  <h2 class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{{ displayBatchName(batch) }}</h2>
                   <Badge :variant="batchVariant(batch.status)">{{ batchStatusLabel(batch.status) }}</Badge>
-                  <Badge variant="neutral">{{ runsByBatchId[batch.id]?.length ?? 0 }} {{ t('nav.data') }}</Badge>
+                  <Badge variant="neutral">{{ runsByBatchId[batch.id]?.length ?? 0 }} {{ t('data.saved') }}</Badge>
                 </div>
                 <div class="mt-2 flex flex-wrap gap-2 text-[11px] text-ink-500 dark:text-ink-300">
-                  <span>{{ formatDate(batch.createdAt) }}</span>
+                  <span>{{ t('batch.created') }} {{ formatDate(batch.createdAt) }}</span>
+                  <span v-if="batch.completedAt">{{ t('batch.completed') }} {{ formatDate(batch.completedAt) }}</span>
                   <span>{{ batch.urls.length }} {{ t('batch.urls') }}</span>
                   <span>{{ batch.recipeIds.length }} {{ t('batch.recipes') }}</span>
+                  <span>{{ batch.totalPlannedRuns }} {{ t('batch.plannedRuns') }}</span>
                   <span>{{ batchDuration(batch) }}</span>
                 </div>
                 <div class="mt-2 flex flex-wrap gap-1.5">
@@ -299,7 +321,7 @@ function createBatchRun(): void {
               <Button size="xs" @click="viewMode = 'all'">{{ t('batch.viewRuns') }}</Button>
               <Button size="xs" variant="ghost" class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500" @click="deleteBatch(batch.id)">
                 <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
-                {{ t('recipes.delete') }}
+                {{ t('batch.delete') }}
               </Button>
             </div>
           </div>
@@ -309,6 +331,7 @@ function createBatchRun(): void {
               v-for="run in (runsByBatchId[batch.id] ?? []).slice(0, 10)"
               :key="run.id"
               :run="run"
+              :batch-name="displayBatchName(batch)"
               @export="exportRun"
               @delete="handleDelete"
             />

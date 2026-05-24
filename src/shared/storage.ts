@@ -1,3 +1,4 @@
+import { batchDisplayName } from './batch-display';
 import { DEFAULT_BATCH_RUN_OPTIONS } from './batch-planner';
 import type {
   BatchRun,
@@ -346,7 +347,7 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 function normalizeBatchRun(value: unknown): BatchRun | null {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.name !== 'string') {
+  if (!isRecord(value) || typeof value.id !== 'string') {
     return null;
   }
 
@@ -371,10 +372,14 @@ function normalizeBatchRun(value: unknown): BatchRun | null {
 
   const createdAt = typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString();
   const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : createdAt;
+  const name =
+    typeof value.name === 'string' && value.name.trim()
+      ? value.name.trim()
+      : batchDisplayName({ name: undefined, createdAt });
 
   return {
     id: value.id,
-    name: value.name.trim() || 'Batch run',
+    name,
     status:
       typeof value.status === 'string' && batchRunStatuses.has(value.status)
         ? (value.status as BatchRun['status'])
@@ -508,9 +513,10 @@ export async function getBatchRun(id: string): Promise<BatchRun | undefined> {
 
 export async function saveBatchRun(batchRun: BatchRun): Promise<void> {
   const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  const normalizedBatchRun = normalizeBatchRun(batchRun) ?? batchRun;
   await setStorageValue(BATCH_RUNS_KEY, {
     ...batchRunsById,
-    [batchRun.id]: batchRun
+    [normalizedBatchRun.id]: normalizedBatchRun
   });
 }
 

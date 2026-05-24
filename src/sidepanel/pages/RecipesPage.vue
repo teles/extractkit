@@ -243,7 +243,7 @@ async function handleImport(event: Event): Promise<void> {
         </div>
 
         <div class="mt-3 flex flex-wrap gap-1.5">
-          <Badge variant="accent">{{ categoryLabel(recipe.category) }}</Badge>
+          <Badge variant="category">{{ categoryLabel(recipe.category) }}</Badge>
           <Badge variant="neutral">{{ sourceLabel(recipe.source) }}</Badge>
           <Badge v-for="tag in visibleTags(recipe)" :key="tag" variant="neutral">#{{ tag }}</Badge>
           <Badge v-if="hiddenTagCount(recipe) > 0" variant="neutral">+{{ hiddenTagCount(recipe) }}</Badge>

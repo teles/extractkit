@@ -1,3 +1,4 @@
+import { batchDisplayName } from '../shared/batch-display';
 import { createBatchPlan, isSupportedBatchUrl } from '../shared/batch-planner';
 import type { BatchRunResponse, RunRecipeResponse, StartBatchRunMessage } from '../shared/messaging';
 import { CONTENT_RUN_RECIPE } from '../shared/messaging';
@@ -30,10 +31,7 @@ function nowIso(): string {
 }
 
 function autoBatchName(): string {
-  return `Batch run · ${new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date())}`;
+  return batchDisplayName({ name: undefined, createdAt: nowIso() });
 }
 
 function createTab(createProperties: chrome.tabs.CreateProperties): Promise<chrome.tabs.Tab> {

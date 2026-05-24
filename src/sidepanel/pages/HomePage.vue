@@ -191,7 +191,7 @@ function formatDuration(milliseconds: number): string {
             <IconBadge :icon="Globe" tone="neutral" />
             <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">{{ t('home.currentPage') }}</h2>
           </div>
-          <Badge v-if="currentTab" variant="accent" size="sm">{{ t('home.active') }}</Badge>
+          <Badge v-if="currentTab" variant="primary" size="sm">{{ t('home.active') }}</Badge>
         </div>
 
         <div class="mt-4 grid gap-3">
@@ -238,7 +238,7 @@ function formatDuration(milliseconds: number): string {
                 <Badge variant="neutral">v{{ recipe.version }}</Badge>
               </div>
               <div class="mt-1 flex flex-wrap gap-1">
-                <Badge variant="accent">{{ t(`recipe.category.${recipe.category}` as TranslationKey) }}</Badge>
+                <Badge variant="category">{{ t(`recipe.category.${recipe.category}` as TranslationKey) }}</Badge>
                 <Badge variant="neutral">{{ countRecipeFields(recipe) }} {{ t('home.fields') }}</Badge>
               </div>
             </div>

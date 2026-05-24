@@ -17,6 +17,7 @@ import { useExport } from '../../composables/useExport';
 import { useRuns } from '../../composables/useRuns';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
+import { batchDisplayName } from '../../shared/batch-display';
 import {
   createBatchPlan,
   DEFAULT_BATCH_RUN_OPTIONS,
@@ -33,7 +34,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const { t } = useSettings();
+const { t, preferences } = useSettings();
 const { success: toastSuccess, error: toastError } = useToast();
 const { batchRuns, error, running, loadBatchRuns, startBatchRun, stopBatchRun, viewProcessingTab } = useBatchRuns();
 const { runs, loadRuns } = useRuns();
@@ -159,6 +160,10 @@ function batchDuration(batch: BatchRun): string {
   return formatDuration(Math.max(0, end - start));
 }
 
+function displayBatchName(batch: Pick<BatchRun, 'name' | 'createdAt'> | null | undefined): string {
+  return batchDisplayName(batch, t('batch.batchRun'), preferences.value.locale);
+}
+
 function eventDuration(event: BatchRunEvent): string | null {
   if (!event.startedAt || !event.completedAt) {
     return null;
@@ -264,7 +269,9 @@ async function exportBatch(): Promise<void> {
   }
 
   await loadRuns();
-  await exportRuns(batchRunsForExport.value, props.recipes, `extractkit-${activeBatch.value.name}`, [activeBatch.value]);
+  await exportRuns(batchRunsForExport.value, props.recipes, `extractkit-${displayBatchName(activeBatch.value)}`, [
+    activeBatch.value
+  ]);
   if (exportError.value) {
     toastError(t('toast.exportFailed'), exportError.value);
   } else {
@@ -300,9 +307,9 @@ function runStatusLabel(batch: BatchRun): string {
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="field-label">{{ t('batch.running') }}</p>
-            <h2 class="truncate text-lg font-semibold text-ink-900 dark:text-ink-50">{{ activeBatch.name }}</h2>
+            <h2 class="truncate text-lg font-semibold text-ink-900 dark:text-ink-50">{{ displayBatchName(activeBatch) }}</h2>
           </div>
-          <Badge variant="accent" size="sm">{{ progressPercent }}%</Badge>
+          <Badge variant="primary" size="sm">{{ progressPercent }}%</Badge>
         </div>
 
         <div class="mt-4 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800">
@@ -378,7 +385,7 @@ function runStatusLabel(batch: BatchRun): string {
           <h2 class="mt-3 text-lg font-semibold text-ink-900 dark:text-ink-50">
             {{ activeBatch.status === 'completed' ? t('batch.complete') : activeBatch.status === 'cancelled' ? t('batch.cancelled') : runStatusLabel(activeBatch) }}
           </h2>
-          <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">{{ activeBatch.name }}</p>
+          <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">{{ displayBatchName(activeBatch) }}</p>
           <Badge class="mt-3" :variant="batchVariant(activeBatch.status)">{{ runStatusLabel(activeBatch) }}</Badge>
         </div>
 
@@ -507,7 +514,7 @@ function runStatusLabel(batch: BatchRun): string {
                 <Badge variant="neutral">v{{ recipe.version }}</Badge>
               </div>
               <div class="mt-1 flex flex-wrap gap-1">
-                <Badge variant="accent">{{ categoryLabel(recipe.category) }}</Badge>
+                <Badge variant="category">{{ categoryLabel(recipe.category) }}</Badge>
                 <Badge variant="neutral">{{ t(`recipe.source.${recipe.source}` as TranslationKey) }}</Badge>
                 <Badge variant="neutral">{{ countRecipeFields(recipe) }} {{ t('recipes.fields') }}</Badge>
                 <Badge variant="neutral">{{ recipe.checks?.length ?? 0 }} {{ t('checks.title') }}</Badge>
@@ -600,7 +607,7 @@ function runStatusLabel(batch: BatchRun): string {
         <div class="mt-3 grid grid-cols-2 gap-2">
           <Badge variant="neutral">{{ urlInput.validUrls.length }} {{ t('batch.validUrls') }}</Badge>
           <Badge variant="neutral">{{ selectedRecipes.length }} {{ t('batch.recipes') }}</Badge>
-          <Badge variant="accent">{{ plan.skippedByCompatibility }} {{ t('batch.skippedByCompatibility') }}</Badge>
+          <Badge variant="info">{{ plan.skippedByCompatibility }} {{ t('batch.skippedByCompatibility') }}</Badge>
           <Badge variant="neutral">~{{ formatDuration(plan.estimatedDurationMs) }}</Badge>
         </div>
 

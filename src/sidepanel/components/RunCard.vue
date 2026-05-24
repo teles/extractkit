@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Calendar, ChevronDown, ChevronUp, Download, Eye, Globe, Timer, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { ChevronDown, ChevronUp, Download, Eye, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import { useSettings } from '../../composables/useSettings';
 import type { RecipeRun } from '../../shared/types';
 import Badge from './Badge.vue';
@@ -10,8 +10,9 @@ import JsonPreview from './JsonPreview.vue';
 import StatusBadge from './StatusBadge.vue';
 import ValidationSummary from './ValidationSummary.vue';
 
-defineProps<{
+const props = defineProps<{
   run: RecipeRun;
+  batchName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -21,6 +22,68 @@ const emit = defineEmits<{
 
 const { preferences, t } = useSettings();
 const expanded = ref(false);
+const visibleBatchName = computed(() => props.batchName ?? props.run.batchName ?? t('batch.batchRun'));
+const hasConfiguredChecks = computed(() => Boolean(props.run.checks && props.run.checks.results.length > 0 && props.run.checks.status !== 'skipped'));
+
+const validationLabel = computed(() => {
+  if (props.run.validation?.status === 'valid') {
+    return t('validation.valid');
+  }
+
+  if (props.run.validation?.status === 'invalid') {
+    return t('validation.invalid');
+  }
+
+  return t('validation.skipped');
+});
+
+const validationVariant = computed(() => {
+  if (props.run.validation?.status === 'valid') {
+    return 'success';
+  }
+
+  if (props.run.validation?.status === 'invalid') {
+    return 'warning';
+  }
+
+  return 'neutral';
+});
+
+const checksVariant = computed(() => {
+  if (!hasConfiguredChecks.value) {
+    return 'neutral';
+  }
+
+  if (props.run.checks?.status === 'passed') {
+    return 'success';
+  }
+
+  if (props.run.checks?.status === 'warning') {
+    return 'warning';
+  }
+
+  return 'danger';
+});
+
+const checksLabel = computed(() => {
+  if (!hasConfiguredChecks.value) {
+    return t('checks.noChecksBadge');
+  }
+
+  const errors = props.run.checks?.errors ?? 0;
+  if (errors > 0) {
+    return errors === 1 ? `1 ${t('checks.error').toLocaleLowerCase(preferences.value.locale)}` : `${errors} ${t('checks.errors')}`;
+  }
+
+  const warnings = props.run.checks?.warnings ?? 0;
+  if (warnings > 0) {
+    return warnings === 1
+      ? `1 ${t('checks.warning').toLocaleLowerCase(preferences.value.locale)}`
+      : `${warnings} ${t('checks.warnings')}`;
+  }
+
+  return t('checks.passedBadge');
+});
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat(preferences.value.locale, {
@@ -41,31 +104,12 @@ function formatDuration(milliseconds: number): string {
 <template>
   <article class="rounded-lg border border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-950">
     <div class="p-3">
-      <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0 flex-1">
-          <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-            <StatusBadge :status="run.status" />
-            <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{{ run.recipeName }}</h3>
-            <Badge variant="neutral">v{{ run.recipeVersion }}</Badge>
-            <Badge v-if="run.batchId" variant="accent">{{ t('batch.batchBadge') }}: {{ run.batchName ?? run.batchId }}</Badge>
-            <ValidationSummary compact :validation="run.validation" />
-            <ChecksSummary compact :checks="run.checks" />
-          </div>
-          <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 dark:text-ink-300">
-            <span class="inline-flex min-w-0 items-center gap-1">
-              <Globe class="h-3.5 w-3.5 text-ink-500" :stroke-width="2.1" aria-hidden="true" />
-              <span class="truncate">{{ run.domain }}</span>
-            </span>
-            <span class="inline-flex items-center gap-1">
-              <Calendar class="h-3.5 w-3.5 text-ink-500" :stroke-width="2.1" aria-hidden="true" />
-              {{ formatDate(run.createdAt) }}
-            </span>
-            <span class="inline-flex items-center gap-1">
-              <Timer class="h-3.5 w-3.5 text-ink-500" :stroke-width="2.1" aria-hidden="true" />
-              {{ formatDuration(run.durationMs) }}
-            </span>
-          </div>
-          <p class="meta-line mt-2 truncate">{{ run.url }}</p>
+      <div class="flex items-start gap-2">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <StatusBadge :status="run.status" />
+          <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50" :title="run.recipeName">
+            {{ run.recipeName }}
+          </h3>
         </div>
 
         <button
@@ -79,10 +123,34 @@ function formatDuration(milliseconds: number): string {
         </button>
       </div>
 
+      <div class="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
+        <Badge variant="neutral" class="shrink-0">v{{ run.recipeVersion }}</Badge>
+        <Badge v-if="run.batchId" variant="primary" class="max-w-[220px]" :title="`${t('batch.batchBadge')}: ${visibleBatchName}`">
+          <span class="min-w-0 truncate">{{ t('batch.batchBadge') }}: {{ visibleBatchName }}</span>
+        </Badge>
+        <Badge :variant="validationVariant" class="shrink-0">{{ validationLabel }}</Badge>
+      </div>
+
+      <div class="mt-2">
+        <Badge :variant="checksVariant">{{ checksLabel }}</Badge>
+      </div>
+
+      <div class="mt-2 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-5 text-ink-500 dark:text-ink-300">
+        <span class="min-w-0 truncate">{{ run.domain }}</span>
+        <span class="shrink-0 text-ink-300 dark:text-ink-600">·</span>
+        <span class="shrink-0">{{ formatDate(run.createdAt) }}</span>
+        <span class="shrink-0 text-ink-300 dark:text-ink-600">·</span>
+        <span class="shrink-0">{{ formatDuration(run.durationMs) }}</span>
+      </div>
+
+      <p class="mt-2 truncate rounded-md border border-ink-200 bg-ink-50 px-2 py-1 font-mono text-[11px] leading-5 text-ink-600 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-200">
+        {{ run.url }}
+      </p>
+
       <div class="mt-3 flex flex-wrap gap-1.5">
         <Button size="xs" @click="expanded = !expanded">
           <Eye class="h-3.5 w-3.5" aria-hidden="true" />
-          {{ t('data.viewDetails') }}
+          {{ t('data.viewJson') }}
         </Button>
         <Button size="xs" @click="emit('export', run)">
           <Download class="h-3.5 w-3.5" aria-hidden="true" />

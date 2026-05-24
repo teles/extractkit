@@ -156,7 +156,7 @@ function resultBadgeLabel(result: RecipeCheckResult): string {
 
 <template>
   <Badge v-if="compact" :variant="badgeVariant">
-    <component :is="icon" class="mr-1 h-3 w-3" :stroke-width="2.1" aria-hidden="true" />
+    <component :is="icon" class="h-3.5 w-3.5 shrink-0" :stroke-width="2.1" aria-hidden="true" />
     {{ compactLabel }}
   </Badge>
 
