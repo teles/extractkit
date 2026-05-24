@@ -1,7 +1,7 @@
 import { readonly, ref } from 'vue';
 import { exportRunsToZip } from '../shared/export';
 import { safeFilename } from '../shared/filename';
-import type { Recipe, RecipeRun } from '../shared/types';
+import type { BatchRun, Recipe, RecipeRun } from '../shared/types';
 
 const exporting = ref(false);
 const error = ref<string | null>(null);
@@ -16,7 +16,12 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function useExport() {
-  async function exportRuns(runs: RecipeRun[], recipes: Recipe[], label = 'extractkit'): Promise<void> {
+  async function exportRuns(
+    runs: RecipeRun[],
+    recipes: Recipe[],
+    label = 'extractkit',
+    batches: BatchRun[] = []
+  ): Promise<void> {
     exporting.value = true;
     error.value = null;
 
@@ -25,7 +30,7 @@ export function useExport() {
         throw new Error('No saved runs selected for export.');
       }
 
-      const zip = await exportRunsToZip(runs, recipes);
+      const zip = await exportRunsToZip(runs, recipes, batches);
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       downloadBlob(zip, `${safeFilename(`${label}-${stamp}`, 'extractkit-export')}.zip`);
     } catch (caughtError) {

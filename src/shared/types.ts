@@ -130,6 +130,58 @@ export type RecipeChecksResult = {
   results: RecipeCheckResult[];
 };
 
+export type BatchRunStatus = 'draft' | 'running' | 'completed' | 'cancelled' | 'failed';
+
+export type BatchRunEventStatus = 'pending' | 'running' | 'success' | 'warning' | 'failed' | 'skipped';
+
+export type BatchRunOptions = {
+  runOnlyCompatibleRecipes: boolean;
+  delayBetweenUrlsMs: number;
+  pageLoadTimeoutMs: number;
+  waitAfterLoadMs: number;
+  retryFailedUrls: number;
+  onUrlError: 'stop' | 'skip' | 'retryThenSkip';
+  onRecipeError: 'stop' | 'skipRecipe' | 'continue';
+  saveSuccessfulRuns: boolean;
+  saveWarningRuns: boolean;
+  saveFailedRuns: boolean;
+  processingTabMode: 'dedicatedPinnedTab';
+};
+
+export type BatchRunEvent = {
+  id: string;
+  batchId: string;
+  url: string;
+  recipeId?: string;
+  recipeName?: string;
+  status: BatchRunEventStatus;
+  message?: string;
+  startedAt?: string;
+  completedAt?: string;
+  runId?: string;
+};
+
+export type BatchRun = {
+  id: string;
+  name: string;
+  status: BatchRunStatus;
+  createdAt: string;
+  updatedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  processingTabId?: number;
+  urls: string[];
+  recipeIds: string[];
+  options: BatchRunOptions;
+  totalPlannedRuns: number;
+  completedRuns: number;
+  successfulRuns: number;
+  warningRuns: number;
+  failedRuns: number;
+  skippedRuns: number;
+  events: BatchRunEvent[];
+};
+
 export type Recipe = {
   id: string;
   name: string;
@@ -161,6 +213,9 @@ export type RecipeRun = {
   recipeId: string;
   recipeVersion: string;
   recipeName: string;
+  batchId?: string;
+  batchName?: string;
+  batchUrlIndex?: number;
   url: string;
   domain: string;
   pageTitle?: string;
@@ -194,6 +249,7 @@ export type CurrentTabInfo = {
 
 export type RecipesById = Record<string, Recipe>;
 export type RunsById = Record<string, RecipeRun>;
+export type BatchRunsById = Record<string, BatchRun>;
 
 export type JsonSchema = Record<string, unknown>;
 

@@ -47,6 +47,7 @@ function formatDuration(milliseconds: number): string {
             <StatusBadge :status="run.status" />
             <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{{ run.recipeName }}</h3>
             <Badge variant="neutral">v{{ run.recipeVersion }}</Badge>
+            <Badge v-if="run.batchId" variant="accent">{{ t('batch.batchBadge') }}: {{ run.batchName ?? run.batchId }}</Badge>
             <ValidationSummary compact :validation="run.validation" />
             <ChecksSummary compact :checks="run.checks" />
           </div>

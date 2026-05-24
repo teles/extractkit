@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { runsToCsv } from './csv';
 import { safeFilename } from './filename';
-import type { Recipe, RecipeRun } from './types';
+import type { BatchRun, Recipe, RecipeRun } from './types';
 
 type ExportManifest = {
   app: 'ExtractKit';
@@ -9,6 +9,7 @@ type ExportManifest = {
   exportedAt: string;
   runCount: number;
   recipeCount: number;
+  batchCount?: number;
 };
 
 function jsonFile(value: unknown): string {
@@ -24,7 +25,7 @@ function runName(run: RecipeRun): string {
   return safeFilename(`${date}-${run.recipeName}-${run.id}`, run.id);
 }
 
-export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[]): Promise<Blob> {
+export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batches: BatchRun[] = []): Promise<Blob> {
   const zip = new JSZip();
   const recipeIds = new Set(runs.map((run) => run.recipeId));
   const includedRecipes = recipes.filter((recipe) => recipeIds.has(recipe.id));
@@ -33,7 +34,8 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[]): Pro
     formatVersion: '1',
     exportedAt: new Date().toISOString(),
     runCount: runs.length,
-    recipeCount: includedRecipes.length
+    recipeCount: includedRecipes.length,
+    batchCount: batches.length || undefined
   };
 
   zip.file('manifest.json', jsonFile(manifest));
@@ -48,6 +50,9 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[]): Pro
 
   zip.file('data/all-runs.json', jsonFile(runs));
   zip.file('data/all-runs.csv', runsToCsv(runs));
+  if (batches.length > 0) {
+    zip.file('data/batches.json', jsonFile(batches));
+  }
 
   return zip.generateAsync({ type: 'blob' });
 }

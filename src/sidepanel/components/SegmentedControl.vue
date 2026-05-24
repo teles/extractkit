@@ -15,7 +15,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="grid grid-cols-3 gap-1 rounded-lg border border-ink-200 bg-ink-100 p-1 dark:border-ink-700 dark:bg-ink-800">
+  <div
+    class="grid gap-1 rounded-lg border border-ink-200 bg-ink-100 p-1 dark:border-ink-700 dark:bg-ink-800"
+    :style="{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }"
+  >
     <button
       v-for="option in options"
       :key="option.value"

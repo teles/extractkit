@@ -89,6 +89,80 @@ export type TranslationKey =
   | 'checks.assertion.emptyAttributeCountEquals'
   | 'checks.assertion.eachElementMustHave'
   | 'checks.assertion.eachElementShouldHave'
+  | 'batch.single'
+  | 'batch.batch'
+  | 'batch.batchRun'
+  | 'batch.name'
+  | 'batch.namePlaceholder'
+  | 'batch.urls'
+  | 'batch.urlsPlaceholder'
+  | 'batch.validUrls'
+  | 'batch.invalidUrls'
+  | 'batch.duplicatesRemoved'
+  | 'batch.paste'
+  | 'batch.removeDuplicates'
+  | 'batch.clear'
+  | 'batch.recipes'
+  | 'batch.selectedRecipes'
+  | 'batch.runOnlyCompatible'
+  | 'batch.advancedOptions'
+  | 'batch.delayBetweenUrls'
+  | 'batch.pageLoadTimeout'
+  | 'batch.waitAfterLoad'
+  | 'batch.retryFailedUrls'
+  | 'batch.whenUrlFails'
+  | 'batch.whenRecipeFails'
+  | 'batch.saveSuccessfulRuns'
+  | 'batch.saveWarningRuns'
+  | 'batch.saveFailedRuns'
+  | 'batch.processingTabMode'
+  | 'batch.plan'
+  | 'batch.plannedRuns'
+  | 'batch.skippedByCompatibility'
+  | 'batch.estimatedDuration'
+  | 'batch.start'
+  | 'batch.running'
+  | 'batch.currentUrl'
+  | 'batch.currentRecipe'
+  | 'batch.viewProcessingTab'
+  | 'batch.stop'
+  | 'batch.processingTabClosed'
+  | 'batch.resumeInNewTab'
+  | 'batch.cancel'
+  | 'batch.complete'
+  | 'batch.export'
+  | 'batch.viewRuns'
+  | 'batch.startNew'
+  | 'batch.allRuns'
+  | 'batch.batches'
+  | 'batch.noBatches'
+  | 'batch.createBatch'
+  | 'batch.noCompatibleRecipes'
+  | 'batch.cancelled'
+  | 'batch.browsingNote'
+  | 'batch.keepTabOpen'
+  | 'batch.recentEvents'
+  | 'batch.successful'
+  | 'batch.warningRuns'
+  | 'batch.failedRuns'
+  | 'batch.skippedRuns'
+  | 'batch.duration'
+  | 'batch.noRecipesSelected'
+  | 'batch.noValidUrls'
+  | 'batch.noPlannedRuns'
+  | 'batch.batchBadge'
+  | 'batch.deleteConfirm'
+  | 'batch.status.draft'
+  | 'batch.status.running'
+  | 'batch.status.completed'
+  | 'batch.status.cancelled'
+  | 'batch.status.failed'
+  | 'batch.onUrlError.stop'
+  | 'batch.onUrlError.skip'
+  | 'batch.onUrlError.retryThenSkip'
+  | 'batch.onRecipeError.stop'
+  | 'batch.onRecipeError.skipRecipe'
+  | 'batch.onRecipeError.continue'
   | 'settings.title'
   | 'settings.description'
   | 'settings.appearance'
@@ -333,6 +407,80 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'checks.assertion.emptyAttributeCountEquals': 'Empty attribute count must equal',
     'checks.assertion.eachElementMustHave': 'Each item must contain selector',
     'checks.assertion.eachElementShouldHave': 'Each item should contain selector',
+    'batch.single': 'Single',
+    'batch.batch': 'Batch',
+    'batch.batchRun': 'Batch run',
+    'batch.name': 'Batch name',
+    'batch.namePlaceholder': 'Ocean Drop PDP SEO QA',
+    'batch.urls': 'URLs',
+    'batch.urlsPlaceholder': 'One URL per line',
+    'batch.validUrls': 'Valid URLs',
+    'batch.invalidUrls': 'Invalid URLs',
+    'batch.duplicatesRemoved': 'duplicates removed',
+    'batch.paste': 'Paste from clipboard',
+    'batch.removeDuplicates': 'Remove duplicates',
+    'batch.clear': 'Clear',
+    'batch.recipes': 'Recipes',
+    'batch.selectedRecipes': 'Selected recipes',
+    'batch.runOnlyCompatible': 'Run only compatible recipes for each URL',
+    'batch.advancedOptions': 'Advanced options',
+    'batch.delayBetweenUrls': 'Delay between URLs',
+    'batch.pageLoadTimeout': 'Page load timeout',
+    'batch.waitAfterLoad': 'Wait after page load',
+    'batch.retryFailedUrls': 'Retry failed URLs',
+    'batch.whenUrlFails': 'When a URL fails',
+    'batch.whenRecipeFails': 'When a recipe fails',
+    'batch.saveSuccessfulRuns': 'Save successful runs',
+    'batch.saveWarningRuns': 'Save runs with warnings',
+    'batch.saveFailedRuns': 'Save failed runs',
+    'batch.processingTabMode': 'Use one pinned processing tab',
+    'batch.plan': 'Batch plan',
+    'batch.plannedRuns': 'Planned runs',
+    'batch.skippedByCompatibility': 'Skipped by compatibility',
+    'batch.estimatedDuration': 'Estimated duration',
+    'batch.start': 'Start batch',
+    'batch.running': 'Batch running',
+    'batch.currentUrl': 'Current URL',
+    'batch.currentRecipe': 'Current recipe',
+    'batch.viewProcessingTab': 'View processing tab',
+    'batch.stop': 'Stop batch',
+    'batch.processingTabClosed': 'Processing tab was closed',
+    'batch.resumeInNewTab': 'Resume in new tab',
+    'batch.cancel': 'Cancel batch',
+    'batch.complete': 'Batch complete',
+    'batch.export': 'Export batch',
+    'batch.viewRuns': 'View runs',
+    'batch.startNew': 'Start new batch',
+    'batch.allRuns': 'All runs',
+    'batch.batches': 'Batches',
+    'batch.noBatches': 'No batch runs yet',
+    'batch.createBatch': 'Create batch run',
+    'batch.noCompatibleRecipes': 'No compatible recipes',
+    'batch.cancelled': 'Batch cancelled',
+    'batch.browsingNote': 'You can keep browsing in other tabs while the batch runs.',
+    'batch.keepTabOpen': 'Keep the processing tab open while the batch is running.',
+    'batch.recentEvents': 'Recent events',
+    'batch.successful': 'Successful',
+    'batch.warningRuns': 'Warnings',
+    'batch.failedRuns': 'Failed',
+    'batch.skippedRuns': 'Skipped',
+    'batch.duration': 'Duration',
+    'batch.noRecipesSelected': 'Select at least one recipe.',
+    'batch.noValidUrls': 'Add at least one valid URL.',
+    'batch.noPlannedRuns': 'No planned runs. Adjust compatibility or recipe selection.',
+    'batch.batchBadge': 'Batch',
+    'batch.deleteConfirm': 'Delete this batch record? Saved runs will be kept.',
+    'batch.status.draft': 'Draft',
+    'batch.status.running': 'Running',
+    'batch.status.completed': 'Completed',
+    'batch.status.cancelled': 'Cancelled',
+    'batch.status.failed': 'Failed',
+    'batch.onUrlError.stop': 'Stop batch',
+    'batch.onUrlError.skip': 'Skip URL',
+    'batch.onUrlError.retryThenSkip': 'Retry, then skip',
+    'batch.onRecipeError.stop': 'Stop batch',
+    'batch.onRecipeError.skipRecipe': 'Skip recipe',
+    'batch.onRecipeError.continue': 'Continue',
     'settings.title': 'Settings',
     'settings.description': 'Customize ExtractKit for your local workflow.',
     'settings.appearance': 'Appearance',
@@ -574,6 +722,80 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'checks.assertion.emptyAttributeCountEquals': 'Contagem de atributo vazio deve ser igual a',
     'checks.assertion.eachElementMustHave': 'Cada item deve conter seletor',
     'checks.assertion.eachElementShouldHave': 'Cada item deveria conter seletor',
+    'batch.single': 'Individual',
+    'batch.batch': 'Lote',
+    'batch.batchRun': 'Execução em lote',
+    'batch.name': 'Nome do lote',
+    'batch.namePlaceholder': 'Ocean Drop PDP SEO QA',
+    'batch.urls': 'URLs',
+    'batch.urlsPlaceholder': 'Uma URL por linha',
+    'batch.validUrls': 'URLs válidas',
+    'batch.invalidUrls': 'URLs inválidas',
+    'batch.duplicatesRemoved': 'duplicadas removidas',
+    'batch.paste': 'Colar da área de transferência',
+    'batch.removeDuplicates': 'Remover duplicadas',
+    'batch.clear': 'Limpar',
+    'batch.recipes': 'Receitas',
+    'batch.selectedRecipes': 'Receitas selecionadas',
+    'batch.runOnlyCompatible': 'Rodar apenas receitas compatíveis para cada URL',
+    'batch.advancedOptions': 'Opções avançadas',
+    'batch.delayBetweenUrls': 'Intervalo entre URLs',
+    'batch.pageLoadTimeout': 'Timeout de carregamento da página',
+    'batch.waitAfterLoad': 'Esperar após carregamento',
+    'batch.retryFailedUrls': 'Tentar URLs com erro novamente',
+    'batch.whenUrlFails': 'Quando uma URL falhar',
+    'batch.whenRecipeFails': 'Quando uma receita falhar',
+    'batch.saveSuccessfulRuns': 'Salvar execuções com sucesso',
+    'batch.saveWarningRuns': 'Salvar execuções com alertas',
+    'batch.saveFailedRuns': 'Salvar execuções com falha',
+    'batch.processingTabMode': 'Usar uma aba fixada de processamento',
+    'batch.plan': 'Plano do lote',
+    'batch.plannedRuns': 'Execuções planejadas',
+    'batch.skippedByCompatibility': 'Ignoradas por compatibilidade',
+    'batch.estimatedDuration': 'Duração estimada',
+    'batch.start': 'Iniciar lote',
+    'batch.running': 'Lote em execução',
+    'batch.currentUrl': 'URL atual',
+    'batch.currentRecipe': 'Receita atual',
+    'batch.viewProcessingTab': 'Ver aba de processamento',
+    'batch.stop': 'Parar lote',
+    'batch.processingTabClosed': 'A aba de processamento foi fechada',
+    'batch.resumeInNewTab': 'Retomar em nova aba',
+    'batch.cancel': 'Cancelar lote',
+    'batch.complete': 'Lote concluído',
+    'batch.export': 'Exportar lote',
+    'batch.viewRuns': 'Ver execuções',
+    'batch.startNew': 'Iniciar novo lote',
+    'batch.allRuns': 'Todas as execuções',
+    'batch.batches': 'Lotes',
+    'batch.noBatches': 'Nenhum lote ainda',
+    'batch.createBatch': 'Criar execução em lote',
+    'batch.noCompatibleRecipes': 'Nenhuma receita compatível',
+    'batch.cancelled': 'Lote cancelado',
+    'batch.browsingNote': 'Você pode continuar navegando em outras abas enquanto o lote roda.',
+    'batch.keepTabOpen': 'Mantenha a aba de processamento aberta enquanto o lote estiver em execução.',
+    'batch.recentEvents': 'Eventos recentes',
+    'batch.successful': 'Sucesso',
+    'batch.warningRuns': 'Alertas',
+    'batch.failedRuns': 'Falhas',
+    'batch.skippedRuns': 'Ignoradas',
+    'batch.duration': 'Duração',
+    'batch.noRecipesSelected': 'Selecione pelo menos uma receita.',
+    'batch.noValidUrls': 'Adicione pelo menos uma URL válida.',
+    'batch.noPlannedRuns': 'Nenhuma execução planejada. Ajuste compatibilidade ou receitas.',
+    'batch.batchBadge': 'Lote',
+    'batch.deleteConfirm': 'Excluir este registro de lote? As execuções salvas serão mantidas.',
+    'batch.status.draft': 'Rascunho',
+    'batch.status.running': 'Rodando',
+    'batch.status.completed': 'Concluído',
+    'batch.status.cancelled': 'Cancelado',
+    'batch.status.failed': 'Falhou',
+    'batch.onUrlError.stop': 'Parar lote',
+    'batch.onUrlError.skip': 'Pular URL',
+    'batch.onUrlError.retryThenSkip': 'Tentar e depois pular',
+    'batch.onRecipeError.stop': 'Parar lote',
+    'batch.onRecipeError.skipRecipe': 'Pular receita',
+    'batch.onRecipeError.continue': 'Continuar',
     'settings.title': 'Configurações',
     'settings.description': 'Personalize o ExtractKit para seu fluxo local.',
     'settings.appearance': 'Aparência',

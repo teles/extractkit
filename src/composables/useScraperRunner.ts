@@ -3,6 +3,7 @@ import type { RunRecipeResponse } from '../shared/messaging';
 import { MESSAGE_RUN_RECIPE } from '../shared/messaging';
 import { generateOutputSchema } from '../shared/output-schema';
 import { validateOutput } from '../shared/output-validation';
+import { statusWithReviewResults } from '../shared/run-status';
 import type { Recipe, RecipeRun } from '../shared/types';
 
 const running = ref(false);
@@ -45,25 +46,6 @@ function requestPermission(permissions: chrome.permissions.Permissions): Promise
       resolve(granted);
     });
   });
-}
-
-function statusWithReviewResults(
-  responseStatus: RecipeRun['status'],
-  run: Pick<RecipeRun, 'validation' | 'checks'>
-): RecipeRun['status'] {
-  if (responseStatus === 'error') {
-    return 'error';
-  }
-
-  if (run.validation?.status === 'invalid') {
-    return 'partial';
-  }
-
-  if (run.checks?.status === 'warning' || run.checks?.status === 'error') {
-    return 'partial';
-  }
-
-  return responseStatus;
 }
 
 async function ensureHostPermission(tabUrl: string | undefined): Promise<void> {

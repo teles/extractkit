@@ -1,4 +1,8 @@
+import { DEFAULT_BATCH_RUN_OPTIONS } from './batch-planner';
 import type {
+  BatchRun,
+  BatchRunOptions,
+  BatchRunsById,
   CheckSeverity,
   LocalePreference,
   OnboardingState,
@@ -16,14 +20,21 @@ import type {
 
 const RECIPES_KEY = 'recipesById';
 const RUNS_KEY = 'runsById';
+const BATCH_RUNS_KEY = 'batchRunsById';
 const PREFERENCES_KEY = 'preferences';
 const ONBOARDING_KEY = 'onboarding';
 
-type StorageKey = typeof RECIPES_KEY | typeof RUNS_KEY | typeof PREFERENCES_KEY | typeof ONBOARDING_KEY;
+type StorageKey =
+  | typeof RECIPES_KEY
+  | typeof RUNS_KEY
+  | typeof BATCH_RUNS_KEY
+  | typeof PREFERENCES_KEY
+  | typeof ONBOARDING_KEY;
 
 type StorageShape = {
   [RECIPES_KEY]: RecipesById;
   [RUNS_KEY]: RunsById;
+  [BATCH_RUNS_KEY]: BatchRunsById;
   [PREFERENCES_KEY]: UserPreferences;
   [ONBOARDING_KEY]: OnboardingState;
 };
@@ -142,6 +153,10 @@ const recipeCategories = new Set<string>([
 
 const recipeSources = new Set<string>(['default', 'user', 'imported', 'gallery']);
 const checkSeverities = new Set<string>(['info', 'warning', 'error']);
+const batchRunStatuses = new Set<string>(['draft', 'running', 'completed', 'cancelled', 'failed']);
+const batchRunEventStatuses = new Set<string>(['pending', 'running', 'success', 'warning', 'failed', 'skipped']);
+const onUrlErrorOptions = new Set<string>(['stop', 'skip', 'retryThenSkip']);
+const onRecipeErrorOptions = new Set<string>(['stop', 'skipRecipe', 'continue']);
 const checkAssertionTypes = new Set<string>([
   'exists',
   'notExists',
@@ -282,6 +297,106 @@ function normalizeRecipe(recipe: Recipe): Recipe {
   };
 }
 
+function normalizeNumber(value: unknown, fallback: number, minimum = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= minimum ? value : fallback;
+}
+
+function normalizeBatchOptions(value: unknown): BatchRunOptions {
+  if (!isRecord(value)) {
+    return DEFAULT_BATCH_RUN_OPTIONS;
+  }
+
+  return {
+    runOnlyCompatibleRecipes:
+      typeof value.runOnlyCompatibleRecipes === 'boolean'
+        ? value.runOnlyCompatibleRecipes
+        : DEFAULT_BATCH_RUN_OPTIONS.runOnlyCompatibleRecipes,
+    delayBetweenUrlsMs: normalizeNumber(value.delayBetweenUrlsMs, DEFAULT_BATCH_RUN_OPTIONS.delayBetweenUrlsMs),
+    pageLoadTimeoutMs: normalizeNumber(value.pageLoadTimeoutMs, DEFAULT_BATCH_RUN_OPTIONS.pageLoadTimeoutMs, 1000),
+    waitAfterLoadMs: normalizeNumber(value.waitAfterLoadMs, DEFAULT_BATCH_RUN_OPTIONS.waitAfterLoadMs),
+    retryFailedUrls: normalizeNumber(value.retryFailedUrls, DEFAULT_BATCH_RUN_OPTIONS.retryFailedUrls),
+    onUrlError:
+      typeof value.onUrlError === 'string' && onUrlErrorOptions.has(value.onUrlError)
+        ? (value.onUrlError as BatchRunOptions['onUrlError'])
+        : DEFAULT_BATCH_RUN_OPTIONS.onUrlError,
+    onRecipeError:
+      typeof value.onRecipeError === 'string' && onRecipeErrorOptions.has(value.onRecipeError)
+        ? (value.onRecipeError as BatchRunOptions['onRecipeError'])
+        : DEFAULT_BATCH_RUN_OPTIONS.onRecipeError,
+    saveSuccessfulRuns:
+      typeof value.saveSuccessfulRuns === 'boolean'
+        ? value.saveSuccessfulRuns
+        : DEFAULT_BATCH_RUN_OPTIONS.saveSuccessfulRuns,
+    saveWarningRuns:
+      typeof value.saveWarningRuns === 'boolean' ? value.saveWarningRuns : DEFAULT_BATCH_RUN_OPTIONS.saveWarningRuns,
+    saveFailedRuns:
+      typeof value.saveFailedRuns === 'boolean' ? value.saveFailedRuns : DEFAULT_BATCH_RUN_OPTIONS.saveFailedRuns,
+    processingTabMode: 'dedicatedPinnedTab'
+  };
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim());
+}
+
+function normalizeBatchRun(value: unknown): BatchRun | null {
+  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.name !== 'string') {
+    return null;
+  }
+
+  const batchId = value.id;
+  const events = Array.isArray(value.events)
+    ? value.events.filter(isRecord).map((event) => ({
+        id: typeof event.id === 'string' && event.id.trim() ? event.id.trim() : crypto.randomUUID(),
+        batchId: typeof event.batchId === 'string' && event.batchId.trim() ? event.batchId.trim() : batchId,
+        url: typeof event.url === 'string' ? event.url : '',
+        recipeId: typeof event.recipeId === 'string' ? event.recipeId : undefined,
+        recipeName: typeof event.recipeName === 'string' ? event.recipeName : undefined,
+        status:
+          typeof event.status === 'string' && batchRunEventStatuses.has(event.status)
+            ? (event.status as BatchRun['events'][number]['status'])
+            : 'skipped',
+        message: typeof event.message === 'string' ? event.message : undefined,
+        startedAt: typeof event.startedAt === 'string' ? event.startedAt : undefined,
+        completedAt: typeof event.completedAt === 'string' ? event.completedAt : undefined,
+        runId: typeof event.runId === 'string' ? event.runId : undefined
+      }))
+    : [];
+
+  const createdAt = typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString();
+  const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : createdAt;
+
+  return {
+    id: value.id,
+    name: value.name.trim() || 'Batch run',
+    status:
+      typeof value.status === 'string' && batchRunStatuses.has(value.status)
+        ? (value.status as BatchRun['status'])
+        : 'draft',
+    createdAt,
+    updatedAt,
+    startedAt: typeof value.startedAt === 'string' ? value.startedAt : undefined,
+    completedAt: typeof value.completedAt === 'string' ? value.completedAt : undefined,
+    processingTabId: typeof value.processingTabId === 'number' ? value.processingTabId : undefined,
+    urls: normalizeStringArray(value.urls),
+    recipeIds: normalizeStringArray(value.recipeIds),
+    options: normalizeBatchOptions(value.options),
+    totalPlannedRuns: normalizeNumber(value.totalPlannedRuns, 0),
+    completedRuns: normalizeNumber(value.completedRuns, 0),
+    successfulRuns: normalizeNumber(value.successfulRuns, 0),
+    warningRuns: normalizeNumber(value.warningRuns, 0),
+    failedRuns: normalizeNumber(value.failedRuns, 0),
+    skippedRuns: normalizeNumber(value.skippedRuns, 0),
+    events
+  };
+}
+
 function getStorageValue<K extends StorageKey>(key: K): Promise<StorageShape[K]> {
   if (!hasChromeStorage()) {
     return Promise.resolve(fallbackRead(key));
@@ -375,6 +490,57 @@ export async function deleteRun(id: string): Promise<void> {
 
 export async function clearRuns(): Promise<void> {
   await setStorageValue(RUNS_KEY, {});
+}
+
+export async function listBatchRuns(): Promise<BatchRun[]> {
+  const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  return Object.values(batchRunsById)
+    .map(normalizeBatchRun)
+    .filter((batchRun): batchRun is BatchRun => Boolean(batchRun))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+export async function getBatchRun(id: string): Promise<BatchRun | undefined> {
+  const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  const batchRun = normalizeBatchRun(batchRunsById[id]);
+  return batchRun ?? undefined;
+}
+
+export async function saveBatchRun(batchRun: BatchRun): Promise<void> {
+  const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  await setStorageValue(BATCH_RUNS_KEY, {
+    ...batchRunsById,
+    [batchRun.id]: batchRun
+  });
+}
+
+export async function updateBatchRun(id: string, patch: Partial<BatchRun>): Promise<BatchRun | undefined> {
+  const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  const currentBatchRun = normalizeBatchRun(batchRunsById[id]);
+  if (!currentBatchRun) {
+    return undefined;
+  }
+
+  const nextBatchRun = {
+    ...currentBatchRun,
+    ...patch,
+    id,
+    updatedAt: patch.updatedAt ?? new Date().toISOString()
+  };
+
+  await setStorageValue(BATCH_RUNS_KEY, {
+    ...batchRunsById,
+    [id]: nextBatchRun
+  });
+
+  return nextBatchRun;
+}
+
+export async function deleteBatchRun(id: string): Promise<void> {
+  const batchRunsById = await getStorageValue(BATCH_RUNS_KEY);
+  const nextBatchRunsById = { ...batchRunsById };
+  delete nextBatchRunsById[id];
+  await setStorageValue(BATCH_RUNS_KEY, nextBatchRunsById);
 }
 
 export async function getPreferences(): Promise<UserPreferences> {

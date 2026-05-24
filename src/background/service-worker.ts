@@ -1,8 +1,17 @@
-import type { CurrentTabResponse, PanelMessage, RunRecipeResponse } from '../shared/messaging';
-import { CONTENT_RUN_RECIPE, isPanelMessage, MESSAGE_GET_CURRENT_TAB, MESSAGE_RUN_RECIPE } from '../shared/messaging';
+import type { BatchRunResponse, CurrentTabResponse, PanelMessage, RunRecipeResponse } from '../shared/messaging';
+import {
+  CONTENT_RUN_RECIPE,
+  isPanelMessage,
+  MESSAGE_GET_CURRENT_TAB,
+  MESSAGE_RUN_RECIPE,
+  MESSAGE_START_BATCH_RUN,
+  MESSAGE_STOP_BATCH_RUN,
+  MESSAGE_VIEW_BATCH_TAB
+} from '../shared/messaging';
 import type { CurrentTabInfo, ScrapeResult } from '../shared/types';
+import { startBatchRun, stopBatchRun, viewBatchTab } from './batch-runner';
 
-type RuntimeResponse = CurrentTabResponse | RunRecipeResponse;
+type RuntimeResponse = CurrentTabResponse | RunRecipeResponse | BatchRunResponse;
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
@@ -153,6 +162,18 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse: (
 
       if (message.type === MESSAGE_RUN_RECIPE) {
         return await runRecipeInCurrentTab(message);
+      }
+
+      if (message.type === MESSAGE_START_BATCH_RUN) {
+        return await startBatchRun(message);
+      }
+
+      if (message.type === MESSAGE_STOP_BATCH_RUN) {
+        return await stopBatchRun(message.batchId);
+      }
+
+      if (message.type === MESSAGE_VIEW_BATCH_TAB) {
+        return await viewBatchTab(message.batchId);
       }
 
       return {
