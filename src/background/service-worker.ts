@@ -3,13 +3,15 @@ import {
   CONTENT_RUN_RECIPE,
   isPanelMessage,
   MESSAGE_GET_CURRENT_TAB,
+  MESSAGE_PAUSE_BATCH_RUN,
+  MESSAGE_RESUME_BATCH_RUN,
   MESSAGE_RUN_RECIPE,
   MESSAGE_START_BATCH_RUN,
   MESSAGE_STOP_BATCH_RUN,
   MESSAGE_VIEW_BATCH_TAB
 } from '../shared/messaging';
 import type { CurrentTabInfo, ScrapeResult } from '../shared/types';
-import { startBatchRun, stopBatchRun, viewBatchTab } from './batch-runner';
+import { pauseBatchRun, resumeBatchRun, startBatchRun, stopBatchRun, viewBatchTab } from './batch-runner';
 
 type RuntimeResponse = CurrentTabResponse | RunRecipeResponse | BatchRunResponse;
 
@@ -166,6 +168,14 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse: (
 
       if (message.type === MESSAGE_START_BATCH_RUN) {
         return await startBatchRun(message);
+      }
+
+      if (message.type === MESSAGE_PAUSE_BATCH_RUN) {
+        return await pauseBatchRun(message.batchId);
+      }
+
+      if (message.type === MESSAGE_RESUME_BATCH_RUN) {
+        return await resumeBatchRun(message.batchId);
       }
 
       if (message.type === MESSAGE_STOP_BATCH_RUN) {

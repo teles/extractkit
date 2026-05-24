@@ -6,6 +6,9 @@ import type { LocalePreference, ThemePreference, UserPreferences } from '../shar
 const preferences = ref<UserPreferences>({
   theme: 'system',
   locale: 'en-US',
+  batchDefaults: {
+    skipHttpErrorPages: true
+  },
   exportOptions: {
     includeRecipes: true,
     includeCsv: true,
@@ -83,6 +86,14 @@ export function useSettings() {
     preferences.value = await updatePreferences({ locale });
   }
 
+  async function setSkipHttpErrorPagesDefault(skipHttpErrorPages: boolean): Promise<void> {
+    preferences.value = await updatePreferences({
+      batchDefaults: {
+        skipHttpErrorPages
+      }
+    });
+  }
+
   async function loadCounts(): Promise<void> {
     const [recipes, runs] = await Promise.all([listRecipes(), listRuns()]);
     recipeCount.value = recipes.length;
@@ -102,6 +113,7 @@ export function useSettings() {
     loadPreferences,
     setTheme,
     setLocale,
+    setSkipHttpErrorPagesDefault,
     applyTheme,
     loadCounts,
     t

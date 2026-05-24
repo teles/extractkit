@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Copy, Download, Pencil, Plus, ScrollText, Search, Trash2, Upload } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
+import { useBatchRuns } from '../../composables/useBatchRuns';
 import { useRecipes } from '../../composables/useRecipes';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
+import { activeBatchFromList, isRecipeLockedByBatch } from '../../shared/batch-state';
 import { safeFilename } from '../../shared/filename';
 import type { TranslationKey } from '../../shared/i18n';
 import { importRecipesFromFiles } from '../../shared/recipe-import';
@@ -17,8 +19,9 @@ import PageHeader from '../components/PageHeader.vue';
 import RecipeForm from '../components/RecipeForm.vue';
 
 const { recipes, loading, error, loadRecipes, saveRecipe, removeRecipe, duplicateRecipe } = useRecipes();
+const { batchRuns, loadBatchRuns } = useBatchRuns();
 const { t } = useSettings();
-const { success: toastSuccess, warning: toastWarning } = useToast();
+const { success: toastSuccess, warning: toastWarning, error: toastError } = useToast();
 
 const editingRecipe = ref<Recipe | null>(null);
 const formOpen = ref(false);
@@ -27,6 +30,7 @@ const importing = ref(false);
 const importErrors = ref<string[]>([]);
 const searchText = ref('');
 const categoryFilter = ref<RecipeCategory | 'all'>('all');
+const activeBatch = computed(() => activeBatchFromList(batchRuns.value));
 
 const filteredRecipes = computed(() => {
   const search = searchText.value.trim().toLowerCase();
@@ -42,7 +46,9 @@ const filteredRecipes = computed(() => {
   });
 });
 
-onMounted(loadRecipes);
+onMounted(async () => {
+  await Promise.all([loadRecipes(), loadBatchRuns()]);
+});
 
 function openNewRecipe(): void {
   editingRecipe.value = null;
@@ -78,11 +84,21 @@ function patternLabel(recipe: Recipe): string {
 }
 
 function openEditRecipe(recipe: Recipe): void {
+  if (isRecipeLockedByBatch(recipe.id, activeBatch.value)) {
+    toastError(t('batch.usedByActiveBatch'), t('batch.recipeLockedDescription'));
+    return;
+  }
+
   editingRecipe.value = recipe;
   formOpen.value = true;
 }
 
 async function handleSave(recipe: Recipe): Promise<void> {
+  if (editingRecipe.value && isRecipeLockedByBatch(recipe.id, activeBatch.value)) {
+    toastError(t('batch.usedByActiveBatch'), t('batch.recipeLockedDescription'));
+    return;
+  }
+
   await saveRecipe(recipe);
   formOpen.value = false;
   editingRecipe.value = null;
@@ -90,6 +106,11 @@ async function handleSave(recipe: Recipe): Promise<void> {
 }
 
 async function handleDelete(recipe: Recipe): Promise<void> {
+  if (isRecipeLockedByBatch(recipe.id, activeBatch.value)) {
+    toastError(t('batch.usedByActiveBatch'), t('batch.recipeLockedDescription'));
+    return;
+  }
+
   if (!confirm(`${t('recipes.deleteConfirm')} "${recipe.name}"?`)) {
     return;
   }
@@ -237,6 +258,7 @@ async function handleImport(event: Event): Promise<void> {
             <div class="flex min-w-0 flex-wrap items-center gap-2">
               <h2 class="truncate text-base font-semibold text-ink-900 dark:text-ink-50">{{ recipe.name }}</h2>
               <Badge variant="neutral" size="sm">v{{ recipe.version }}</Badge>
+              <Badge v-if="isRecipeLockedByBatch(recipe.id, activeBatch)" variant="warning">{{ t('batch.usedByActiveBatch') }}</Badge>
             </div>
             <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-500 dark:text-ink-300">{{ recipe.description || t('recipes.noDesc') }}</p>
           </div>
@@ -259,7 +281,7 @@ async function handleImport(event: Event): Promise<void> {
         </div>
 
         <div class="mt-3 flex flex-wrap gap-1.5">
-          <Button size="xs" @click="openEditRecipe(recipe)">
+          <Button size="xs" :disabled="isRecipeLockedByBatch(recipe.id, activeBatch)" :title="isRecipeLockedByBatch(recipe.id, activeBatch) ? t('batch.recipeLockedDescription') : undefined" @click="openEditRecipe(recipe)">
             <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
             {{ t('recipes.edit') }}
           </Button>
@@ -271,7 +293,7 @@ async function handleImport(event: Event): Promise<void> {
             <Download class="h-3.5 w-3.5" aria-hidden="true" />
             {{ t('recipes.export') }}
           </Button>
-          <Button size="xs" variant="ghost" class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500" @click="handleDelete(recipe)">
+          <Button size="xs" variant="ghost" class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500" :disabled="isRecipeLockedByBatch(recipe.id, activeBatch)" :title="isRecipeLockedByBatch(recipe.id, activeBatch) ? t('batch.recipeLockedDescription') : undefined" @click="handleDelete(recipe)">
             <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
             {{ t('recipes.delete') }}
           </Button>

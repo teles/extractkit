@@ -130,12 +130,14 @@ export type RecipeChecksResult = {
   results: RecipeCheckResult[];
 };
 
-export type BatchRunStatus = 'draft' | 'running' | 'completed' | 'cancelled' | 'failed';
+export type BatchRunStatus = 'draft' | 'running' | 'paused' | 'completed' | 'cancelled' | 'failed';
 
 export type BatchRunEventStatus = 'pending' | 'running' | 'success' | 'warning' | 'failed' | 'skipped';
 
 export type BatchRunOptions = {
   runOnlyCompatibleRecipes: boolean;
+  skipHttpErrorPages: boolean;
+  skipHttpStatusCodes?: number[];
   delayBetweenUrlsMs: number;
   pageLoadTimeoutMs: number;
   waitAfterLoadMs: number;
@@ -155,6 +157,17 @@ export type BatchRunEvent = {
   recipeId?: string;
   recipeName?: string;
   status: BatchRunEventStatus;
+  httpStatus?: number;
+  errorKind?:
+    | 'invalid-url'
+    | 'unsupported-url'
+    | 'http-error'
+    | 'timeout'
+    | 'navigation-error'
+    | 'injection-error'
+    | 'recipe-error'
+    | 'no-compatible-recipes'
+    | 'processing-tab-closed';
   message?: string;
   startedAt?: string;
   completedAt?: string;
@@ -169,6 +182,13 @@ export type BatchRun = {
   updatedAt: string;
   startedAt?: string;
   completedAt?: string;
+  pauseReason?: 'user' | 'processing-tab-closed' | 'browser-restarted' | 'error';
+  pausedAt?: string;
+  resumedAt?: string;
+  stopRequested?: boolean;
+  pauseRequested?: boolean;
+  currentUrlIndex?: number;
+  currentRecipeIndex?: number;
   processingTabId?: number;
   urls: string[];
   recipeIds: string[];
@@ -272,6 +292,9 @@ export type LocalePreference = 'en-US' | 'pt-BR';
 export type UserPreferences = {
   theme: ThemePreference;
   locale: LocalePreference;
+  batchDefaults?: {
+    skipHttpErrorPages: boolean;
+  };
   exportOptions?: {
     includeRecipes: boolean;
     includeCsv: boolean;

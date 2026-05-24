@@ -102,9 +102,19 @@ export type TranslationKey =
   | 'batch.paste'
   | 'batch.removeDuplicates'
   | 'batch.clear'
+  | 'batch.addOpenTabs'
+  | 'batch.openTabs'
+  | 'batch.addSelectedUrls'
+  | 'batch.importFile'
+  | 'batch.importedUrls'
+  | 'batch.duplicatesSkipped'
+  | 'batch.invalidUrlsIgnored'
+  | 'batch.unsupportedUrls'
   | 'batch.recipes'
   | 'batch.selectedRecipes'
   | 'batch.runOnlyCompatible'
+  | 'batch.skipHttpErrorPages'
+  | 'batch.skipHttpErrorPagesDescription'
   | 'batch.advancedOptions'
   | 'batch.delayBetweenUrls'
   | 'batch.pageLoadTimeout'
@@ -122,12 +132,26 @@ export type TranslationKey =
   | 'batch.estimatedDuration'
   | 'batch.start'
   | 'batch.running'
+  | 'batch.paused'
+  | 'batch.pauseRequested'
+  | 'batch.pausingAfterCurrentItem'
+  | 'batch.resume'
+  | 'batch.resumed'
+  | 'batch.pause'
+  | 'batch.pauseAction'
+  | 'batch.resumeAction'
+  | 'batch.stopAction'
+  | 'batch.stopped'
+  | 'batch.viewProgress'
+  | 'batch.currentItem'
   | 'batch.currentUrl'
   | 'batch.currentRecipe'
   | 'batch.viewProcessingTab'
   | 'batch.stop'
   | 'batch.processingTabClosed'
+  | 'batch.pausedAvoidLoss'
   | 'batch.resumeInNewTab'
+  | 'batch.resumeToContinueInNewTab'
   | 'batch.cancel'
   | 'batch.complete'
   | 'batch.export'
@@ -139,6 +163,18 @@ export type TranslationKey =
   | 'batch.noBatches'
   | 'batch.createBatch'
   | 'batch.noCompatibleRecipes'
+  | 'batch.httpErrorPage'
+  | 'batch.skippedHttpErrorPage'
+  | 'batch.httpStatus'
+  | 'batch.httpErrorSkippedMessage'
+  | 'batch.unsupportedUrl'
+  | 'batch.navigationFailed'
+  | 'batch.injectionFailed'
+  | 'batch.urlsWithNoCompatibleRecipes'
+  | 'batch.selectTabsToAdd'
+  | 'batch.currentWindowOnly'
+  | 'batch.sameDomainAsActiveTab'
+  | 'batch.selectAllSupported'
   | 'batch.cancelled'
   | 'batch.browsingNote'
   | 'batch.keepTabOpen'
@@ -153,10 +189,20 @@ export type TranslationKey =
   | 'batch.noRecipesSelected'
   | 'batch.noValidUrls'
   | 'batch.noPlannedRuns'
+  | 'batch.resumeLater'
+  | 'batch.pausedCurrentItem'
+  | 'batch.alreadyActive'
+  | 'batch.activeStartBlocked'
+  | 'batch.usedByActiveBatch'
+  | 'batch.recipeLockedDescription'
+  | 'batch.settingsLocked'
+  | 'batch.activeRunDeleteBlocked'
+  | 'batch.activeBatchDeleteBlocked'
   | 'batch.batchBadge'
   | 'batch.deleteConfirm'
   | 'batch.status.draft'
   | 'batch.status.running'
+  | 'batch.status.paused'
   | 'batch.status.completed'
   | 'batch.status.cancelled'
   | 'batch.status.failed'
@@ -177,6 +223,9 @@ export type TranslationKey =
   | 'settings.language'
   | 'settings.interfaceLanguage'
   | 'settings.localData'
+  | 'settings.extractionDefaults'
+  | 'settings.skipHttpErrorPagesDefault'
+  | 'settings.skipHttpErrorPagesDefaultDescription'
   | 'settings.recipes'
   | 'settings.savedRuns'
   | 'settings.exportAll'
@@ -414,7 +463,7 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.batch': 'Batch',
     'batch.batchRun': 'Batch run',
     'batch.name': 'Batch name',
-    'batch.namePlaceholder': 'Ocean Drop PDP SEO QA',
+    'batch.namePlaceholder': 'My extraction batch',
     'batch.urls': 'URLs',
     'batch.urlsPlaceholder': 'One URL per line',
     'batch.validUrls': 'Valid URLs',
@@ -423,9 +472,19 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.paste': 'Paste from clipboard',
     'batch.removeDuplicates': 'Remove duplicates',
     'batch.clear': 'Clear',
+    'batch.addOpenTabs': 'Add open tabs',
+    'batch.openTabs': 'Open tabs',
+    'batch.addSelectedUrls': 'Add selected URLs',
+    'batch.importFile': 'Import file',
+    'batch.importedUrls': 'Imported URLs',
+    'batch.duplicatesSkipped': 'Duplicates skipped',
+    'batch.invalidUrlsIgnored': 'Invalid URLs ignored',
+    'batch.unsupportedUrls': 'Unsupported URLs',
     'batch.recipes': 'Recipes',
     'batch.selectedRecipes': 'Selected recipes',
     'batch.runOnlyCompatible': 'Run only compatible recipes for each URL',
+    'batch.skipHttpErrorPages': 'Skip HTTP error pages',
+    'batch.skipHttpErrorPagesDescription': 'Skip extraction when a page appears to return an HTTP error status.',
     'batch.advancedOptions': 'Advanced options',
     'batch.delayBetweenUrls': 'Delay between URLs',
     'batch.pageLoadTimeout': 'Page load timeout',
@@ -437,18 +496,32 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.saveWarningRuns': 'Save runs with warnings',
     'batch.saveFailedRuns': 'Save failed runs',
     'batch.processingTabMode': 'Use one pinned processing tab',
-    'batch.plan': 'Batch plan',
+    'batch.plan': 'Preview plan',
     'batch.plannedRuns': 'Planned runs',
     'batch.skippedByCompatibility': 'Skipped by compatibility',
     'batch.estimatedDuration': 'Estimated duration',
     'batch.start': 'Start batch',
     'batch.running': 'Batch running',
+    'batch.paused': 'Batch paused',
+    'batch.pauseRequested': 'Batch pause requested',
+    'batch.pausingAfterCurrentItem': 'Pausing after current item',
+    'batch.resume': 'Resume batch',
+    'batch.resumed': 'Batch resumed',
+    'batch.pause': 'Pause batch',
+    'batch.pauseAction': 'Pause',
+    'batch.resumeAction': 'Resume',
+    'batch.stopAction': 'Stop',
+    'batch.stopped': 'Batch stopped',
+    'batch.viewProgress': 'View progress',
+    'batch.currentItem': 'Current',
     'batch.currentUrl': 'Current URL',
     'batch.currentRecipe': 'Current recipe',
     'batch.viewProcessingTab': 'View processing tab',
     'batch.stop': 'Stop batch',
     'batch.processingTabClosed': 'Processing tab was closed',
+    'batch.pausedAvoidLoss': 'Batch paused to avoid losing progress.',
     'batch.resumeInNewTab': 'Resume in new tab',
+    'batch.resumeToContinueInNewTab': 'Resume to continue in a new tab.',
     'batch.cancel': 'Cancel batch',
     'batch.complete': 'Batch complete',
     'batch.export': 'Export batch',
@@ -460,6 +533,18 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.noBatches': 'No batch runs yet',
     'batch.createBatch': 'Create batch run',
     'batch.noCompatibleRecipes': 'No compatible recipes',
+    'batch.httpErrorPage': 'HTTP error page',
+    'batch.skippedHttpErrorPage': 'Skipped HTTP error page',
+    'batch.httpStatus': 'HTTP status',
+    'batch.httpErrorSkippedMessage': 'Page skipped because HTTP error pages are disabled',
+    'batch.unsupportedUrl': 'Unsupported URL',
+    'batch.navigationFailed': 'Navigation failed',
+    'batch.injectionFailed': 'Content script injection failed',
+    'batch.urlsWithNoCompatibleRecipes': 'URLs with no compatible recipes',
+    'batch.selectTabsToAdd': 'Select tabs to add',
+    'batch.currentWindowOnly': 'Current window only',
+    'batch.sameDomainAsActiveTab': 'Same domain as active tab',
+    'batch.selectAllSupported': 'Select all supported',
     'batch.cancelled': 'Batch cancelled',
     'batch.browsingNote': 'You can keep browsing in other tabs while the batch runs.',
     'batch.keepTabOpen': 'Keep the processing tab open while the batch is running.',
@@ -473,11 +558,22 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.completed': 'Completed',
     'batch.noRecipesSelected': 'Select at least one recipe.',
     'batch.noValidUrls': 'Add at least one valid URL.',
-    'batch.noPlannedRuns': 'No planned runs. Adjust compatibility or recipe selection.',
+    'batch.noPlannedRuns': 'No planned runs.',
+    'batch.resumeLater': 'You can resume this batch later. ExtractKit will continue from the next pending item.',
+    'batch.pausedCurrentItem': 'Paused after current item. You can resume later.',
+    'batch.alreadyActive': 'A batch is already running or paused.',
+    'batch.activeStartBlocked': 'Finish, resume, or stop it before starting another one.',
+    'batch.usedByActiveBatch': 'Used by active batch',
+    'batch.recipeLockedDescription':
+      'This recipe is being used by an active batch. Pause or stop the batch before editing it.',
+    'batch.settingsLocked': 'Some settings are locked while a batch is running.',
+    'batch.activeRunDeleteBlocked': 'This run belongs to an active batch and cannot be deleted yet.',
+    'batch.activeBatchDeleteBlocked': 'This batch is active and cannot be deleted yet.',
     'batch.batchBadge': 'Batch',
     'batch.deleteConfirm': 'Delete this batch record? Saved runs will be kept.',
     'batch.status.draft': 'Draft',
     'batch.status.running': 'Batch running',
+    'batch.status.paused': 'Batch paused',
     'batch.status.completed': 'Batch completed',
     'batch.status.cancelled': 'Batch cancelled',
     'batch.status.failed': 'Batch failed',
@@ -498,6 +594,10 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'settings.language': 'Language',
     'settings.interfaceLanguage': 'Interface language',
     'settings.localData': 'Local data',
+    'settings.extractionDefaults': 'Extraction defaults',
+    'settings.skipHttpErrorPagesDefault': 'Skip HTTP error pages by default',
+    'settings.skipHttpErrorPagesDefaultDescription':
+      'Avoid extracting pages that appear to return HTTP errors such as 404 or 500 during batch runs.',
     'settings.recipes': 'Recipes',
     'settings.savedRuns': 'Saved history',
     'settings.exportAll': 'Export all',
@@ -732,7 +832,7 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.batch': 'Lote',
     'batch.batchRun': 'Execução em lote',
     'batch.name': 'Nome do lote',
-    'batch.namePlaceholder': 'Ocean Drop PDP SEO QA',
+    'batch.namePlaceholder': 'Meu lote de extração',
     'batch.urls': 'URLs',
     'batch.urlsPlaceholder': 'Uma URL por linha',
     'batch.validUrls': 'URLs válidas',
@@ -741,9 +841,20 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.paste': 'Colar da área de transferência',
     'batch.removeDuplicates': 'Remover duplicadas',
     'batch.clear': 'Limpar',
+    'batch.addOpenTabs': 'Adicionar abas abertas',
+    'batch.openTabs': 'Abas abertas',
+    'batch.addSelectedUrls': 'Adicionar URLs selecionadas',
+    'batch.importFile': 'Importar arquivo',
+    'batch.importedUrls': 'URLs importadas',
+    'batch.duplicatesSkipped': 'Duplicadas ignoradas',
+    'batch.invalidUrlsIgnored': 'URLs inválidas ignoradas',
+    'batch.unsupportedUrls': 'URLs não suportadas',
     'batch.recipes': 'Receitas',
     'batch.selectedRecipes': 'Receitas selecionadas',
     'batch.runOnlyCompatible': 'Rodar apenas receitas compatíveis para cada URL',
+    'batch.skipHttpErrorPages': 'Ignorar páginas com erro HTTP',
+    'batch.skipHttpErrorPagesDescription':
+      'Ignore a extração quando uma página parece retornar um status de erro HTTP.',
     'batch.advancedOptions': 'Opções avançadas',
     'batch.delayBetweenUrls': 'Intervalo entre URLs',
     'batch.pageLoadTimeout': 'Timeout de carregamento da página',
@@ -755,18 +866,32 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.saveWarningRuns': 'Salvar execuções com alertas',
     'batch.saveFailedRuns': 'Salvar execuções com falha',
     'batch.processingTabMode': 'Usar uma aba fixada de processamento',
-    'batch.plan': 'Plano do lote',
+    'batch.plan': 'Prévia do plano',
     'batch.plannedRuns': 'Execuções planejadas',
     'batch.skippedByCompatibility': 'Ignoradas por compatibilidade',
     'batch.estimatedDuration': 'Duração estimada',
     'batch.start': 'Iniciar lote',
     'batch.running': 'Lote em execução',
+    'batch.paused': 'Lote pausado',
+    'batch.pauseRequested': 'Pausa do lote solicitada',
+    'batch.pausingAfterCurrentItem': 'Pausando após o item atual',
+    'batch.resume': 'Retomar lote',
+    'batch.resumed': 'Lote retomado',
+    'batch.pause': 'Pausar lote',
+    'batch.pauseAction': 'Pausar',
+    'batch.resumeAction': 'Retomar',
+    'batch.stopAction': 'Parar',
+    'batch.stopped': 'Lote parado',
+    'batch.viewProgress': 'Ver progresso',
+    'batch.currentItem': 'Atual',
     'batch.currentUrl': 'URL atual',
     'batch.currentRecipe': 'Receita atual',
     'batch.viewProcessingTab': 'Ver aba de processamento',
     'batch.stop': 'Parar lote',
     'batch.processingTabClosed': 'A aba de processamento foi fechada',
+    'batch.pausedAvoidLoss': 'O lote foi pausado para evitar perda de progresso.',
     'batch.resumeInNewTab': 'Retomar em nova aba',
+    'batch.resumeToContinueInNewTab': 'Retome para continuar em uma nova aba.',
     'batch.cancel': 'Cancelar lote',
     'batch.complete': 'Lote concluído',
     'batch.export': 'Exportar lote',
@@ -778,6 +903,18 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.noBatches': 'Nenhum lote ainda',
     'batch.createBatch': 'Criar execução em lote',
     'batch.noCompatibleRecipes': 'Nenhuma receita compatível',
+    'batch.httpErrorPage': 'Página com erro HTTP',
+    'batch.skippedHttpErrorPage': 'Página com erro HTTP ignorada',
+    'batch.httpStatus': 'Status HTTP',
+    'batch.httpErrorSkippedMessage': 'Página ignorada porque páginas com erro HTTP estão desativadas',
+    'batch.unsupportedUrl': 'URL não suportada',
+    'batch.navigationFailed': 'Falha de navegação',
+    'batch.injectionFailed': 'Falha ao injetar content script',
+    'batch.urlsWithNoCompatibleRecipes': 'URLs sem receitas compatíveis',
+    'batch.selectTabsToAdd': 'Selecione abas para adicionar',
+    'batch.currentWindowOnly': 'Apenas janela atual',
+    'batch.sameDomainAsActiveTab': 'Mesmo domínio da aba ativa',
+    'batch.selectAllSupported': 'Selecionar todas suportadas',
     'batch.cancelled': 'Lote cancelado',
     'batch.browsingNote': 'Você pode continuar navegando em outras abas enquanto o lote roda.',
     'batch.keepTabOpen': 'Mantenha a aba de processamento aberta enquanto o lote estiver em execução.',
@@ -791,11 +928,23 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.completed': 'Concluído',
     'batch.noRecipesSelected': 'Selecione pelo menos uma receita.',
     'batch.noValidUrls': 'Adicione pelo menos uma URL válida.',
-    'batch.noPlannedRuns': 'Nenhuma execução planejada. Ajuste compatibilidade ou receitas.',
+    'batch.noPlannedRuns': 'Nenhuma execução planejada.',
+    'batch.resumeLater':
+      'Você pode retomar este lote depois. O ExtractKit continuará a partir do próximo item pendente.',
+    'batch.pausedCurrentItem': 'Pausado após o item atual. Você pode retomar depois.',
+    'batch.alreadyActive': 'Já existe um lote em execução ou pausado.',
+    'batch.activeStartBlocked': 'Finalize, retome ou pare esse lote antes de iniciar outro.',
+    'batch.usedByActiveBatch': 'Usada por lote ativo',
+    'batch.recipeLockedDescription':
+      'Esta receita está sendo usada por um lote ativo. Pause ou pare o lote antes de editá-la.',
+    'batch.settingsLocked': 'Algumas configurações ficam bloqueadas enquanto um lote está em execução.',
+    'batch.activeRunDeleteBlocked': 'Esta execução pertence a um lote ativo e ainda não pode ser excluída.',
+    'batch.activeBatchDeleteBlocked': 'Este lote está ativo e ainda não pode ser excluído.',
     'batch.batchBadge': 'Lote',
     'batch.deleteConfirm': 'Excluir este registro de lote? As execuções salvas serão mantidas.',
     'batch.status.draft': 'Rascunho',
     'batch.status.running': 'Lote em execução',
+    'batch.status.paused': 'Lote pausado',
     'batch.status.completed': 'Lote concluído',
     'batch.status.cancelled': 'Lote cancelado',
     'batch.status.failed': 'Lote com falha',
@@ -816,6 +965,10 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'settings.language': 'Idioma',
     'settings.interfaceLanguage': 'Idioma da interface',
     'settings.localData': 'Dados locais',
+    'settings.extractionDefaults': 'Padrões de extração',
+    'settings.skipHttpErrorPagesDefault': 'Ignorar páginas com erro HTTP por padrão',
+    'settings.skipHttpErrorPagesDefaultDescription':
+      'Evite extrair páginas que parecem retornar erros HTTP como 404 ou 500 durante execuções em lote.',
     'settings.recipes': 'Receitas',
     'settings.savedRuns': 'Histórico salvo',
     'settings.exportAll': 'Exportar tudo',

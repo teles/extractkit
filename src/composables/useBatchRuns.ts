@@ -1,6 +1,12 @@
 import { readonly, ref } from 'vue';
 import type { BatchRunResponse } from '../shared/messaging';
-import { MESSAGE_START_BATCH_RUN, MESSAGE_STOP_BATCH_RUN, MESSAGE_VIEW_BATCH_TAB } from '../shared/messaging';
+import {
+  MESSAGE_PAUSE_BATCH_RUN,
+  MESSAGE_RESUME_BATCH_RUN,
+  MESSAGE_START_BATCH_RUN,
+  MESSAGE_STOP_BATCH_RUN,
+  MESSAGE_VIEW_BATCH_TAB
+} from '../shared/messaging';
 import { deleteBatchRun as deleteStoredBatchRun, listBatchRuns as listStoredBatchRuns } from '../shared/storage';
 import type { BatchRun, BatchRunOptions, Recipe } from '../shared/types';
 
@@ -156,6 +162,56 @@ export function useBatchRuns() {
     }
   }
 
+  async function pauseBatchRun(batchId: string): Promise<BatchRun | null> {
+    error.value = null;
+
+    try {
+      if (!hasRuntimeMessaging()) {
+        throw new Error('Load the extension in Chrome to pause batches.');
+      }
+
+      const response = await sendBatchMessage({
+        type: MESSAGE_PAUSE_BATCH_RUN,
+        batchId
+      });
+
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
+
+      await loadBatchRuns();
+      return response.data;
+    } catch (caughtError) {
+      error.value = caughtError instanceof Error ? caughtError.message : 'Could not pause the batch.';
+      return null;
+    }
+  }
+
+  async function resumeBatchRun(batchId: string): Promise<BatchRun | null> {
+    error.value = null;
+
+    try {
+      if (!hasRuntimeMessaging()) {
+        throw new Error('Load the extension in Chrome to resume batches.');
+      }
+
+      const response = await sendBatchMessage({
+        type: MESSAGE_RESUME_BATCH_RUN,
+        batchId
+      });
+
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
+
+      await loadBatchRuns();
+      return response.data;
+    } catch (caughtError) {
+      error.value = caughtError instanceof Error ? caughtError.message : 'Could not resume the batch.';
+      return null;
+    }
+  }
+
   async function viewProcessingTab(batchId: string): Promise<void> {
     error.value = null;
 
@@ -189,6 +245,8 @@ export function useBatchRuns() {
     error: readonly(error),
     loadBatchRuns,
     startBatchRun,
+    pauseBatchRun,
+    resumeBatchRun,
     stopBatchRun,
     viewProcessingTab,
     removeBatchRun

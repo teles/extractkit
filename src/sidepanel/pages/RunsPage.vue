@@ -9,8 +9,9 @@ import { useRuns } from '../../composables/useRuns';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
 import { batchDisplayName } from '../../shared/batch-display';
+import { activeBatchFromList } from '../../shared/batch-state';
 import type { TranslationKey } from '../../shared/i18n';
-import type { BatchRun, RecipeRun } from '../../shared/types';
+import type { BatchRun, BatchRunEvent, RecipeRun } from '../../shared/types';
 import Badge from '../components/Badge.vue';
 import Button from '../components/Button.vue';
 import Card from '../components/Card.vue';
@@ -20,7 +21,7 @@ import RunCard from '../components/RunCard.vue';
 import SegmentedControl from '../components/SegmentedControl.vue';
 
 const { runs, loading, error, loadRuns, removeRun } = useRuns();
-const { batchRuns, loadBatchRuns, removeBatchRun } = useBatchRuns();
+const { batchRuns, loadBatchRuns, pauseBatchRun, resumeBatchRun, stopBatchRun, removeBatchRun } = useBatchRuns();
 const { recipes, loadRecipes } = useRecipes();
 const { exporting, error: exportError, exportRuns } = useExport();
 const { t, preferences } = useSettings();
@@ -32,6 +33,7 @@ const domainFilter = ref('');
 const urlFilter = ref('');
 const viewMode = ref<'all' | 'batches'>('all');
 const expandedBatchIds = ref<string[]>([]);
+const activeBatch = computed(() => activeBatchFromList(batchRuns.value));
 
 const viewModeOptions = computed<Array<{ value: 'all' | 'batches'; label: string }>>(() => [
   { value: 'all', label: t('batch.allRuns') },
@@ -70,6 +72,12 @@ onMounted(async () => {
 });
 
 async function handleDelete(id: string): Promise<void> {
+  const run = runs.value.find((item) => item.id === id);
+  if (run?.batchId && run.batchId === activeBatch.value?.id) {
+    toastError(t('batch.activeRunDeleteBlocked'));
+    return;
+  }
+
   if (!confirm(t('data.deleteConfirm'))) {
     return;
   }
@@ -106,11 +114,37 @@ async function exportBatch(batch: BatchRun): Promise<void> {
 }
 
 async function deleteBatch(batchId: string): Promise<void> {
+  if (batchId === activeBatch.value?.id) {
+    toastError(t('batch.activeBatchDeleteBlocked'));
+    return;
+  }
+
   if (!confirm(t('batch.deleteConfirm'))) {
     return;
   }
 
   await removeBatchRun(batchId);
+}
+
+async function pauseBatch(batch: BatchRun): Promise<void> {
+  const paused = await pauseBatchRun(batch.id);
+  if (paused) {
+    toastSuccess(t('batch.pauseRequested'));
+  }
+}
+
+async function resumeBatch(batch: BatchRun): Promise<void> {
+  const resumed = await resumeBatchRun(batch.id);
+  if (resumed) {
+    toastSuccess(t('batch.resumed'));
+  }
+}
+
+async function stopBatch(batch: BatchRun): Promise<void> {
+  const stopped = await stopBatchRun(batch.id);
+  if (stopped) {
+    toastSuccess(t('batch.stopped'));
+  }
 }
 
 function toggleBatch(batchId: string): void {
@@ -132,6 +166,10 @@ function batchVariant(status: BatchRun['status']): 'neutral' | 'success' | 'warn
     return 'accent';
   }
 
+  if (status === 'paused') {
+    return 'warning';
+  }
+
   if (status === 'cancelled') {
     return 'warning';
   }
@@ -145,6 +183,54 @@ function batchVariant(status: BatchRun['status']): 'neutral' | 'success' | 'warn
 
 function batchStatusLabel(status: BatchRun['status']): string {
   return t(`batch.status.${status}` as TranslationKey);
+}
+
+function eventVariant(status: BatchRunEvent['status']): 'neutral' | 'success' | 'warning' | 'danger' | 'accent' {
+  if (status === 'success') {
+    return 'success';
+  }
+
+  if (status === 'warning') {
+    return 'warning';
+  }
+
+  if (status === 'failed') {
+    return 'danger';
+  }
+
+  if (status === 'running') {
+    return 'accent';
+  }
+
+  return 'neutral';
+}
+
+function eventTitle(event: BatchRunEvent): string {
+  if (event.errorKind === 'http-error' && event.status === 'skipped') {
+    return t('batch.skippedHttpErrorPage');
+  }
+
+  if (event.errorKind === 'navigation-error') {
+    return t('batch.navigationFailed');
+  }
+
+  if (event.errorKind === 'timeout') {
+    return t('batch.pageLoadTimeout');
+  }
+
+  if (event.errorKind === 'injection-error') {
+    return t('batch.injectionFailed');
+  }
+
+  if (event.errorKind === 'no-compatible-recipes') {
+    return t('batch.noCompatibleRecipes');
+  }
+
+  return event.recipeName ?? event.message ?? t('batch.batchRun');
+}
+
+function batchDetailEvents(batch: BatchRun): BatchRunEvent[] {
+  return [...batch.events].reverse().filter((event) => !event.runId).slice(0, 10);
 }
 
 function displayBatchName(batch: Pick<BatchRun, 'name' | 'createdAt'> | null | undefined): string {
@@ -192,6 +278,10 @@ function batchDuration(batch: BatchRun): string {
 }
 
 function createBatchRun(): void {
+  router.push({ path: '/', query: { mode: 'batch' } });
+}
+
+function viewBatchProgress(): void {
   router.push({ path: '/', query: { mode: 'batch' } });
 }
 </script>
@@ -251,6 +341,8 @@ function createBatchRun(): void {
           :key="run.id"
           :run="run"
           :batch-name="batchNameForRun(run)"
+          :delete-disabled="Boolean(run.batchId && run.batchId === activeBatch?.id)"
+          :delete-title="run.batchId && run.batchId === activeBatch?.id ? t('batch.activeRunDeleteBlocked') : undefined"
           @export="exportRun"
           @delete="handleDelete"
         />
@@ -314,12 +406,25 @@ function createBatchRun(): void {
             </div>
 
             <div class="mt-3 flex flex-wrap gap-1.5">
+              <Button v-if="batch.id === activeBatch?.id" size="xs" variant="primary" @click="viewBatchProgress">
+                {{ t('batch.viewProgress') }}
+              </Button>
               <Button size="xs" :disabled="exporting || (runsByBatchId[batch.id]?.length ?? 0) === 0" @click="exportBatch(batch)">
                 <Download class="h-3.5 w-3.5" aria-hidden="true" />
                 {{ t('batch.export') }}
               </Button>
               <Button size="xs" @click="viewMode = 'all'">{{ t('batch.viewRuns') }}</Button>
-              <Button size="xs" variant="ghost" class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500" @click="deleteBatch(batch.id)">
+              <Button v-if="batch.status === 'running'" size="xs" @click="pauseBatch(batch)">{{ t('batch.pause') }}</Button>
+              <Button v-if="batch.status === 'paused'" size="xs" variant="primary" @click="resumeBatch(batch)">{{ t('batch.resume') }}</Button>
+              <Button v-if="batch.status === 'running' || batch.status === 'paused'" size="xs" variant="danger" @click="stopBatch(batch)">{{ t('batch.stop') }}</Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500"
+                :disabled="batch.id === activeBatch?.id"
+                :title="batch.id === activeBatch?.id ? t('batch.activeBatchDeleteBlocked') : undefined"
+                @click="deleteBatch(batch.id)"
+              >
                 <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
                 {{ t('batch.delete') }}
               </Button>
@@ -327,15 +432,36 @@ function createBatchRun(): void {
           </div>
 
           <div v-if="isBatchExpanded(batch.id)" class="space-y-2 border-t border-ink-200 bg-ink-50 p-3 dark:border-ink-700 dark:bg-ink-900">
+            <div
+              v-for="event in batchDetailEvents(batch)"
+              :key="event.id"
+              class="rounded-md border border-ink-200 bg-white p-3 dark:border-ink-700 dark:bg-ink-950"
+            >
+              <div class="flex min-w-0 items-start gap-2">
+                <Badge :variant="eventVariant(event.status)">{{ event.status }}</Badge>
+                <div class="min-w-0 flex-1">
+                  <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <p class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900 dark:text-ink-50">{{ eventTitle(event) }}</p>
+                    <Badge v-if="event.httpStatus" variant="neutral">{{ t('batch.httpStatus') }} {{ event.httpStatus }}</Badge>
+                  </div>
+                  <p v-if="event.message && event.errorKind !== 'http-error' && event.message !== eventTitle(event)" class="mt-1 truncate text-xs text-ink-500 dark:text-ink-300">
+                    {{ event.message }}
+                  </p>
+                  <p class="meta-line mt-1 truncate">{{ event.url }}</p>
+                </div>
+              </div>
+            </div>
             <RunCard
               v-for="run in (runsByBatchId[batch.id] ?? []).slice(0, 10)"
               :key="run.id"
               :run="run"
               :batch-name="displayBatchName(batch)"
+              :delete-disabled="batch.id === activeBatch?.id"
+              :delete-title="batch.id === activeBatch?.id ? t('batch.activeRunDeleteBlocked') : undefined"
               @export="exportRun"
               @delete="handleDelete"
             />
-            <div v-if="(runsByBatchId[batch.id]?.length ?? 0) === 0" class="rounded-md border border-ink-200 bg-white p-3 text-sm text-ink-500 dark:border-ink-700 dark:bg-ink-950 dark:text-ink-300">
+            <div v-if="(runsByBatchId[batch.id]?.length ?? 0) === 0 && batchDetailEvents(batch).length === 0" class="rounded-md border border-ink-200 bg-white p-3 text-sm text-ink-500 dark:border-ink-700 dark:bg-ink-950 dark:text-ink-300">
               {{ t('data.emptyTitle') }}
             </div>
           </div>

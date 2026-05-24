@@ -1,25 +1,46 @@
 import { batchDisplayName } from '../shared/batch-display';
-import { createBatchPlan, isSupportedBatchUrl } from '../shared/batch-planner';
+import { createBatchPlan, DEFAULT_BATCH_RUN_OPTIONS, isSupportedBatchUrl } from '../shared/batch-planner';
+import { activeBatchFromList, isBatchActive } from '../shared/batch-state';
 import type { BatchRunResponse, RunRecipeResponse, StartBatchRunMessage } from '../shared/messaging';
 import { CONTENT_RUN_RECIPE } from '../shared/messaging';
 import { generateOutputSchema } from '../shared/output-schema';
 import { validateOutput } from '../shared/output-validation';
 import { statusWithReviewResults } from '../shared/run-status';
-import { getBatchRun, saveBatchRun, saveRun, updateBatchRun } from '../shared/storage';
+import { getBatchRun, listBatchRuns, listRecipes, saveBatchRun, saveRun, updateBatchRun } from '../shared/storage';
 import type { BatchRun, BatchRunEvent, BatchRunOptions, Recipe, RecipeRun, ScrapeResult } from '../shared/types';
 
 type BatchController = {
   cancelled: boolean;
+  pauseRequested: boolean;
 };
 
 type RuntimeBatchResponse = BatchRunResponse;
+type BatchEventErrorKind = NonNullable<BatchRunEvent['errorKind']>;
+type NavigationResult = {
+  httpStatus?: number;
+};
 
 const controllers = new Map<string, BatchController>();
 const MAX_STORED_EVENTS = 200;
 const PROCESSING_TAB_CLOSED_MESSAGE = 'Processing tab was closed';
+const HTTP_ERROR_SKIPPED_MESSAGE = 'Page skipped because HTTP error pages are disabled';
+
+class BatchRunnerError extends Error {
+  constructor(
+    message: string,
+    readonly errorKind: BatchEventErrorKind
+  ) {
+    super(message);
+    this.name = 'BatchRunnerError';
+  }
+}
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
+}
+
+function errorKindFromError(error: unknown, fallback: BatchEventErrorKind): BatchEventErrorKind {
+  return error instanceof BatchRunnerError ? error.errorKind : fallback;
 }
 
 function sleep(milliseconds: number): Promise<void> {
@@ -53,7 +74,7 @@ function getTab(tabId: number): Promise<chrome.tabs.Tab> {
     chrome.tabs.get(tabId, (tab) => {
       const error = chrome.runtime.lastError;
       if (error) {
-        reject(new Error(PROCESSING_TAB_CLOSED_MESSAGE));
+        reject(new BatchRunnerError(PROCESSING_TAB_CLOSED_MESSAGE, 'processing-tab-closed'));
         return;
       }
 
@@ -67,7 +88,7 @@ function updateTab(tabId: number, updateProperties: chrome.tabs.UpdateProperties
     chrome.tabs.update(tabId, updateProperties, (tab) => {
       const error = chrome.runtime.lastError;
       if (error || !tab) {
-        reject(new Error(error?.message ?? PROCESSING_TAB_CLOSED_MESSAGE));
+        reject(new BatchRunnerError(error?.message ?? PROCESSING_TAB_CLOSED_MESSAGE, 'navigation-error'));
         return;
       }
 
@@ -143,12 +164,14 @@ function waitForTabComplete(tabId: number, timeoutMs: number): Promise<void> {
 
     const onRemoved = (removedTabId: number) => {
       if (removedTabId === tabId) {
-        settle(() => reject(new Error(PROCESSING_TAB_CLOSED_MESSAGE)));
+        settle(() => reject(new BatchRunnerError(PROCESSING_TAB_CLOSED_MESSAGE, 'processing-tab-closed')));
       }
     };
 
     const timeout = setTimeout(() => {
-      settle(() => reject(new Error(`Page load timeout after ${Math.round(timeoutMs / 1000)}s.`)));
+      settle(() =>
+        reject(new BatchRunnerError(`Page load timeout after ${Math.round(timeoutMs / 1000)}s.`, 'timeout'))
+      );
     }, timeoutMs);
 
     chrome.tabs.onUpdated.addListener(onUpdated);
@@ -164,6 +187,41 @@ function waitForTabComplete(tabId: number, timeoutMs: number): Promise<void> {
         settle(() => reject(error));
       });
   });
+}
+
+function createHttpStatusTracker(tabId: number): { getStatus: () => number | undefined; stop: () => void } {
+  let httpStatus: number | undefined;
+
+  if (!chrome.webRequest?.onHeadersReceived) {
+    return {
+      getStatus: () => httpStatus,
+      stop: () => undefined
+    };
+  }
+
+  const listener = (details: chrome.webRequest.WebResponseHeadersDetails) => {
+    if (details.tabId === tabId && details.frameId === 0 && typeof details.statusCode === 'number') {
+      httpStatus = details.statusCode;
+    }
+  };
+
+  try {
+    chrome.webRequest.onHeadersReceived.addListener(listener, {
+      tabId,
+      types: ['main_frame'],
+      urls: ['http://*/*', 'https://*/*']
+    });
+  } catch {
+    return {
+      getStatus: () => httpStatus,
+      stop: () => undefined
+    };
+  }
+
+  return {
+    getStatus: () => httpStatus,
+    stop: () => chrome.webRequest.onHeadersReceived.removeListener(listener)
+  };
 }
 
 async function mutateBatch(batchId: string, mutate: (batch: BatchRun) => BatchRun): Promise<BatchRun | undefined> {
@@ -193,6 +251,59 @@ function replaceEvent(batch: BatchRun, eventId: string, patch: Partial<BatchRunE
     ...batch,
     events: batch.events.map((event) => (event.id === eventId ? { ...event, ...patch } : event))
   };
+}
+
+async function pauseBatchAtCheckpoint(
+  batchId: string,
+  reason: NonNullable<BatchRun['pauseReason']>,
+  message?: string
+): Promise<void> {
+  const pausedAt = nowIso();
+  await mutateBatch(batchId, (batch) => {
+    const nextBatch: BatchRun = {
+      ...batch,
+      status: 'paused',
+      pauseReason: reason,
+      pausedAt,
+      pauseRequested: false,
+      stopRequested: false
+    };
+
+    if (!message) {
+      return nextBatch;
+    }
+
+    return appendEvent(nextBatch, {
+      id: crypto.randomUUID(),
+      batchId,
+      url: '',
+      status: 'skipped',
+      errorKind: reason === 'processing-tab-closed' ? 'processing-tab-closed' : undefined,
+      message,
+      completedAt: pausedAt
+    });
+  });
+}
+
+async function pauseIfRequested(batchId: string, controller: BatchController): Promise<boolean> {
+  const batch = await getBatchRun(batchId);
+  if (!batch || (!controller.pauseRequested && !batch.pauseRequested)) {
+    return false;
+  }
+
+  await pauseBatchAtCheckpoint(batchId, 'user');
+  return true;
+}
+
+async function updateBatchProgress(
+  batchId: string,
+  currentUrlIndex: number,
+  currentRecipeIndex: number
+): Promise<void> {
+  await updateBatchRun(batchId, {
+    currentUrlIndex,
+    currentRecipeIndex
+  });
 }
 
 function shouldSaveRun(run: RecipeRun, options: BatchRunOptions): boolean {
@@ -233,7 +344,8 @@ function addCounts(
 }
 
 function isProcessingTabClosedError(error: unknown): boolean {
-  return toErrorMessage(error).includes(PROCESSING_TAB_CLOSED_MESSAGE);
+  const message = toErrorMessage(error).toLowerCase();
+  return message.includes(PROCESSING_TAB_CLOSED_MESSAGE.toLowerCase()) || message.includes('no tab with id');
 }
 
 async function navigateWithRetries(
@@ -241,28 +353,52 @@ async function navigateWithRetries(
   url: string,
   options: BatchRunOptions,
   controller: BatchController
-): Promise<void> {
+): Promise<NavigationResult> {
   const maxAttempts = options.onUrlError === 'retryThenSkip' ? options.retryFailedUrls + 1 : 1;
   let lastError: unknown;
+  let lastResult: NavigationResult = {};
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     if (controller.cancelled) {
       throw new Error('Batch cancelled.');
     }
 
+    const statusTracker = createHttpStatusTracker(tabId);
     try {
       await updateTab(tabId, { url, active: false, pinned: true });
       await waitForTabComplete(tabId, options.pageLoadTimeoutMs);
-      return;
+      lastResult = {
+        httpStatus: statusTracker.getStatus()
+      };
+
+      if (lastResult.httpStatus === 429 && attempt < maxAttempts) {
+        continue;
+      }
+
+      return lastResult;
     } catch (error) {
       lastError = error;
       if (isProcessingTabClosedError(error)) {
         throw error;
       }
+    } finally {
+      statusTracker.stop();
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Could not load URL.');
+  if (lastResult.httpStatus === 429) {
+    return lastResult;
+  }
+
+  throw lastError instanceof Error ? lastError : new BatchRunnerError('Could not load URL.', 'navigation-error');
+}
+
+function shouldSkipHttpStatus(status: number | undefined, options: BatchRunOptions): boolean {
+  if (!options.skipHttpErrorPages || typeof status !== 'number') {
+    return false;
+  }
+
+  return (options.skipHttpStatusCodes ?? []).includes(status);
 }
 
 async function runRecipeInTab(
@@ -271,10 +407,15 @@ async function runRecipeInTab(
   batch: BatchRun,
   batchUrlIndex: number
 ): Promise<RecipeRun> {
-  await executeContentScript(tabId);
+  try {
+    await executeContentScript(tabId);
+  } catch (error) {
+    throw new BatchRunnerError(toErrorMessage(error), 'injection-error');
+  }
+
   const response = await sendContentMessage(tabId, recipe);
   if (!response.ok) {
-    throw new Error(response.error);
+    throw new BatchRunnerError(response.error, 'recipe-error');
   }
 
   const scrapeResult: ScrapeResult = response.data;
@@ -321,10 +462,32 @@ async function finishBatch(batchId: string, status: BatchRun['status'], message?
       batchId,
       url: '',
       status: status === 'cancelled' ? 'skipped' : 'failed',
+      errorKind: message === PROCESSING_TAB_CLOSED_MESSAGE ? 'processing-tab-closed' : undefined,
       message,
       completedAt
     });
   });
+}
+
+async function ensureProcessingTab(batch: BatchRun): Promise<number> {
+  if (batch.processingTabId) {
+    try {
+      await getTab(batch.processingTabId);
+      return batch.processingTabId;
+    } catch {
+      // Fall through and create a new processing tab.
+    }
+  }
+
+  const tab = await createTab({ url: 'about:blank', active: false, pinned: true });
+  if (!tab.id) {
+    throw new Error('Could not create the processing tab.');
+  }
+
+  await updateBatchRun(batch.id, {
+    processingTabId: tab.id
+  });
+  return tab.id;
 }
 
 async function runBatch(batchId: string, recipes: Recipe[], controller: BatchController): Promise<void> {
@@ -335,12 +498,28 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
 
   const plan = createBatchPlan(initialBatch.urls, recipes, initialBatch.options);
   const tabId = initialBatch.processingTabId;
+  const startUrlIndex = initialBatch.currentUrlIndex ?? 0;
+  const startRecipeIndex = initialBatch.currentRecipeIndex ?? 0;
 
   try {
     for (const mapping of plan.mappings) {
+      if (mapping.urlIndex < startUrlIndex) {
+        continue;
+      }
+
       if (controller.cancelled) {
         await finishBatch(batchId, 'cancelled', 'Batch stopped by user.');
         return;
+      }
+
+      if (await pauseIfRequested(batchId, controller)) {
+        return;
+      }
+
+      const firstRecipeIndex = mapping.urlIndex === startUrlIndex ? startRecipeIndex : 0;
+      if (firstRecipeIndex >= mapping.recipes.length && mapping.recipes.length > 0) {
+        await updateBatchProgress(batchId, mapping.urlIndex + 1, 0);
+        continue;
       }
 
       if (mapping.recipes.length === 0) {
@@ -351,19 +530,42 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
             url: mapping.url,
             status: 'skipped',
             message: 'No compatible recipes.',
+            errorKind: 'no-compatible-recipes',
             completedAt: nowIso()
           })
         );
+        await updateBatchProgress(batchId, mapping.urlIndex + 1, 0);
         continue;
       }
 
+      let navigationResult: NavigationResult = {};
       try {
-        await navigateWithRetries(tabId, mapping.url, initialBatch.options, controller);
+        navigationResult = await navigateWithRetries(tabId, mapping.url, initialBatch.options, controller);
+        if (shouldSkipHttpStatus(navigationResult.httpStatus, initialBatch.options)) {
+          await mutateBatch(batchId, (batch) =>
+            addCounts(
+              appendEvent(batch, {
+                id: crypto.randomUUID(),
+                batchId,
+                url: mapping.url,
+                status: 'skipped',
+                httpStatus: navigationResult.httpStatus,
+                errorKind: 'http-error',
+                message: HTTP_ERROR_SKIPPED_MESSAGE,
+                completedAt: nowIso()
+              }),
+              { completedRuns: mapping.recipes.length, skippedRuns: mapping.recipes.length }
+            )
+          );
+          await updateBatchProgress(batchId, mapping.urlIndex + 1, 0);
+          continue;
+        }
+
         await sleep(initialBatch.options.waitAfterLoadMs);
         await getTab(tabId);
       } catch (error) {
         if (isProcessingTabClosedError(error)) {
-          await finishBatch(batchId, 'cancelled', PROCESSING_TAB_CLOSED_MESSAGE);
+          await pauseBatchAtCheckpoint(batchId, 'processing-tab-closed', PROCESSING_TAB_CLOSED_MESSAGE);
           return;
         }
 
@@ -374,12 +576,14 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
               batchId,
               url: mapping.url,
               status: 'failed',
+              errorKind: errorKindFromError(error, 'navigation-error'),
               message: toErrorMessage(error),
               completedAt: nowIso()
             }),
-            { skippedRuns: mapping.recipes.length }
+            { completedRuns: mapping.recipes.length, skippedRuns: mapping.recipes.length }
           )
         );
+        await updateBatchProgress(batchId, mapping.urlIndex + 1, 0);
 
         if (initialBatch.options.onUrlError === 'stop') {
           await finishBatch(batchId, 'failed', toErrorMessage(error));
@@ -389,14 +593,20 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
         continue;
       }
 
-      for (const recipe of mapping.recipes) {
+      for (let recipeIndex = firstRecipeIndex; recipeIndex < mapping.recipes.length; recipeIndex += 1) {
+        const recipe = mapping.recipes[recipeIndex];
         if (controller.cancelled) {
           await finishBatch(batchId, 'cancelled', 'Batch stopped by user.');
           return;
         }
 
+        if (await pauseIfRequested(batchId, controller)) {
+          return;
+        }
+
         const eventId = crypto.randomUUID();
         const startedAt = nowIso();
+        await updateBatchProgress(batchId, mapping.urlIndex, recipeIndex);
         await mutateBatch(batchId, (batch) =>
           appendEvent(batch, {
             id: eventId,
@@ -422,6 +632,7 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
             addCounts(
               replaceEvent(batch, eventId, {
                 status: run.status === 'success' ? 'success' : run.status === 'partial' ? 'warning' : 'failed',
+                httpStatus: navigationResult.httpStatus,
                 message: saved ? undefined : 'Run completed but was not saved by batch options.',
                 completedAt: nowIso(),
                 runId: saved ? run.id : undefined
@@ -429,21 +640,25 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
               counts
             )
           );
+          await updateBatchProgress(batchId, mapping.urlIndex, recipeIndex + 1);
         } catch (error) {
           const message = toErrorMessage(error);
           await mutateBatch(batchId, (batch) =>
             addCounts(
               replaceEvent(batch, eventId, {
                 status: 'failed',
+                httpStatus: navigationResult.httpStatus,
+                errorKind: errorKindFromError(error, 'recipe-error'),
                 message,
                 completedAt: nowIso()
               }),
               { completedRuns: 1, failedRuns: 1 }
             )
           );
+          await updateBatchProgress(batchId, mapping.urlIndex, recipeIndex + 1);
 
           if (isProcessingTabClosedError(error)) {
-            await finishBatch(batchId, 'cancelled', PROCESSING_TAB_CLOSED_MESSAGE);
+            await pauseBatchAtCheckpoint(batchId, 'processing-tab-closed', PROCESSING_TAB_CLOSED_MESSAGE);
             return;
           }
 
@@ -452,8 +667,13 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
             return;
           }
         }
+
+        if (await pauseIfRequested(batchId, controller)) {
+          return;
+        }
       }
 
+      await updateBatchProgress(batchId, mapping.urlIndex + 1, 0);
       if (initialBatch.options.delayBetweenUrlsMs > 0) {
         await sleep(initialBatch.options.delayBetweenUrlsMs);
       }
@@ -461,20 +681,35 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
 
     await finishBatch(batchId, controller.cancelled ? 'cancelled' : 'completed');
   } catch (error) {
-    await finishBatch(
-      batchId,
-      isProcessingTabClosedError(error) || controller.cancelled ? 'cancelled' : 'failed',
-      toErrorMessage(error)
-    );
+    if (isProcessingTabClosedError(error)) {
+      await pauseBatchAtCheckpoint(batchId, 'processing-tab-closed', PROCESSING_TAB_CLOSED_MESSAGE);
+    } else {
+      await finishBatch(batchId, controller.cancelled ? 'cancelled' : 'failed', toErrorMessage(error));
+    }
   } finally {
     controllers.delete(batchId);
   }
 }
 
 export async function startBatchRun(message: StartBatchRunMessage): Promise<RuntimeBatchResponse> {
+  const activeBatch = activeBatchFromList(await listBatchRuns());
+  if (activeBatch) {
+    return {
+      ok: false,
+      error: 'A batch is already running or paused. Finish, resume, or stop it before starting another one.'
+    };
+  }
+
   const urls = message.urls.filter(isSupportedBatchUrl).map((url) => new URL(url).toString());
   const recipes = message.recipes;
-  const plan = createBatchPlan(urls, recipes, message.options);
+  const options: BatchRunOptions = {
+    ...DEFAULT_BATCH_RUN_OPTIONS,
+    ...message.options,
+    skipHttpStatusCodes: message.options.skipHttpStatusCodes?.length
+      ? message.options.skipHttpStatusCodes
+      : DEFAULT_BATCH_RUN_OPTIONS.skipHttpStatusCodes
+  };
+  const plan = createBatchPlan(urls, recipes, options);
 
   if (urls.length === 0) {
     return {
@@ -516,25 +751,112 @@ export async function startBatchRun(message: StartBatchRunMessage): Promise<Runt
     processingTabId: tab.id,
     urls,
     recipeIds: recipes.map((recipe) => recipe.id),
-    options: message.options,
+    options,
     totalPlannedRuns: plan.totalPlannedRuns,
     completedRuns: 0,
     successfulRuns: 0,
     warningRuns: 0,
     failedRuns: 0,
     skippedRuns: plan.skippedByCompatibility,
+    currentUrlIndex: 0,
+    currentRecipeIndex: 0,
+    pauseRequested: false,
+    stopRequested: false,
     events: []
   };
 
   await saveBatchRun(batch);
 
-  const controller = { cancelled: false };
+  const controller = { cancelled: false, pauseRequested: false };
   controllers.set(batch.id, controller);
   void runBatch(batch.id, recipes, controller);
 
   return {
     ok: true,
     data: batch
+  };
+}
+
+export async function pauseBatchRun(batchId: string): Promise<RuntimeBatchResponse> {
+  const batch = await getBatchRun(batchId);
+  if (!batch || !isBatchActive(batch)) {
+    return {
+      ok: false,
+      error: 'Batch run not found.'
+    };
+  }
+
+  if (batch.status === 'paused') {
+    return {
+      ok: true,
+      data: batch
+    };
+  }
+
+  const controller = controllers.get(batchId);
+  if (controller) {
+    controller.pauseRequested = true;
+  }
+
+  const nextBatch = await updateBatchRun(batchId, {
+    pauseRequested: true
+  });
+
+  return nextBatch
+    ? {
+        ok: true,
+        data: nextBatch
+      }
+    : {
+        ok: false,
+        error: 'Batch run not found.'
+      };
+}
+
+export async function resumeBatchRun(batchId: string): Promise<RuntimeBatchResponse> {
+  const batch = await getBatchRun(batchId);
+  if (!batch || batch.status !== 'paused') {
+    return {
+      ok: false,
+      error: 'Batch run is not paused.'
+    };
+  }
+
+  const activeBatch = activeBatchFromList((await listBatchRuns()).filter((candidate) => candidate.id !== batchId));
+  if (activeBatch) {
+    return {
+      ok: false,
+      error: 'A batch is already running or paused. Finish, resume, or stop it before starting another one.'
+    };
+  }
+
+  const processingTabId = await ensureProcessingTab(batch);
+  const resumedAt = nowIso();
+  const nextBatch = await updateBatchRun(batchId, {
+    status: 'running',
+    resumedAt,
+    pauseReason: undefined,
+    pausedAt: undefined,
+    pauseRequested: false,
+    stopRequested: false,
+    processingTabId
+  });
+
+  if (!nextBatch) {
+    return {
+      ok: false,
+      error: 'Batch run not found.'
+    };
+  }
+
+  const recipes = (await listRecipes()).filter((recipe) => nextBatch.recipeIds.includes(recipe.id));
+  const controller = { cancelled: false, pauseRequested: false };
+  controllers.set(nextBatch.id, controller);
+  void runBatch(nextBatch.id, recipes, controller);
+
+  return {
+    ok: true,
+    data: nextBatch
   };
 }
 
@@ -546,7 +868,9 @@ export async function stopBatchRun(batchId: string): Promise<RuntimeBatchRespons
 
   const batch = await updateBatchRun(batchId, {
     status: 'cancelled',
-    completedAt: nowIso()
+    completedAt: nowIso(),
+    stopRequested: true,
+    pauseRequested: false
   });
 
   if (!batch) {

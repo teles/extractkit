@@ -13,6 +13,8 @@ import ValidationSummary from './ValidationSummary.vue';
 const props = defineProps<{
   run: RecipeRun;
   batchName?: string;
+  deleteDisabled?: boolean;
+  deleteTitle?: string;
 }>();
 
 const emit = defineEmits<{
@@ -156,7 +158,14 @@ function formatDuration(milliseconds: number): string {
           <Download class="h-3.5 w-3.5" aria-hidden="true" />
           {{ t('recipes.export') }}
         </Button>
-        <Button size="xs" variant="ghost" class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500" @click="emit('delete', run.id)">
+        <Button
+          size="xs"
+          variant="ghost"
+          class="ml-auto text-coral-500 hover:bg-coral-50 hover:text-coral-500"
+          :disabled="deleteDisabled"
+          :title="deleteTitle"
+          @click="emit('delete', run.id)"
+        >
           <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
           {{ t('recipes.delete') }}
         </Button>

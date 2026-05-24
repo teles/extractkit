@@ -89,6 +89,9 @@ function defaultPreferences(): UserPreferences {
   return {
     theme: 'system',
     locale: 'en-US',
+    batchDefaults: {
+      skipHttpErrorPages: DEFAULT_BATCH_RUN_OPTIONS.skipHttpErrorPages
+    },
     exportOptions: {
       includeRecipes: true,
       includeCsv: true,
@@ -131,10 +134,19 @@ function normalizePreferences(value: unknown): UserPreferences {
             : (defaults.exportOptions?.includeManifest ?? true)
       }
     : defaults.exportOptions;
+  const batchDefaults = isRecord(value.batchDefaults)
+    ? {
+        skipHttpErrorPages:
+          typeof value.batchDefaults.skipHttpErrorPages === 'boolean'
+            ? value.batchDefaults.skipHttpErrorPages
+            : (defaults.batchDefaults?.skipHttpErrorPages ?? true)
+      }
+    : defaults.batchDefaults;
 
   return {
     theme: isThemePreference(value.theme) ? value.theme : defaults.theme,
     locale: isLocalePreference(value.locale) ? value.locale : defaults.locale,
+    batchDefaults,
     exportOptions
   };
 }
@@ -154,8 +166,19 @@ const recipeCategories = new Set<string>([
 
 const recipeSources = new Set<string>(['default', 'user', 'imported', 'gallery']);
 const checkSeverities = new Set<string>(['info', 'warning', 'error']);
-const batchRunStatuses = new Set<string>(['draft', 'running', 'completed', 'cancelled', 'failed']);
+const batchRunStatuses = new Set<string>(['draft', 'running', 'paused', 'completed', 'cancelled', 'failed']);
 const batchRunEventStatuses = new Set<string>(['pending', 'running', 'success', 'warning', 'failed', 'skipped']);
+const batchRunEventErrorKinds = new Set<string>([
+  'invalid-url',
+  'unsupported-url',
+  'http-error',
+  'timeout',
+  'navigation-error',
+  'injection-error',
+  'recipe-error',
+  'no-compatible-recipes',
+  'processing-tab-closed'
+]);
 const onUrlErrorOptions = new Set<string>(['stop', 'skip', 'retryThenSkip']);
 const onRecipeErrorOptions = new Set<string>(['stop', 'skipRecipe', 'continue']);
 const checkAssertionTypes = new Set<string>([
@@ -312,6 +335,15 @@ function normalizeBatchOptions(value: unknown): BatchRunOptions {
       typeof value.runOnlyCompatibleRecipes === 'boolean'
         ? value.runOnlyCompatibleRecipes
         : DEFAULT_BATCH_RUN_OPTIONS.runOnlyCompatibleRecipes,
+    skipHttpErrorPages:
+      typeof value.skipHttpErrorPages === 'boolean'
+        ? value.skipHttpErrorPages
+        : DEFAULT_BATCH_RUN_OPTIONS.skipHttpErrorPages,
+    skipHttpStatusCodes: Array.isArray(value.skipHttpStatusCodes)
+      ? value.skipHttpStatusCodes
+          .filter((status): status is number => typeof status === 'number' && Number.isInteger(status))
+          .filter((status) => status >= 100 && status <= 599)
+      : DEFAULT_BATCH_RUN_OPTIONS.skipHttpStatusCodes,
     delayBetweenUrlsMs: normalizeNumber(value.delayBetweenUrlsMs, DEFAULT_BATCH_RUN_OPTIONS.delayBetweenUrlsMs),
     pageLoadTimeoutMs: normalizeNumber(value.pageLoadTimeoutMs, DEFAULT_BATCH_RUN_OPTIONS.pageLoadTimeoutMs, 1000),
     waitAfterLoadMs: normalizeNumber(value.waitAfterLoadMs, DEFAULT_BATCH_RUN_OPTIONS.waitAfterLoadMs),
@@ -363,6 +395,12 @@ function normalizeBatchRun(value: unknown): BatchRun | null {
           typeof event.status === 'string' && batchRunEventStatuses.has(event.status)
             ? (event.status as BatchRun['events'][number]['status'])
             : 'skipped',
+        httpStatus:
+          typeof event.httpStatus === 'number' && Number.isInteger(event.httpStatus) ? event.httpStatus : undefined,
+        errorKind:
+          typeof event.errorKind === 'string' && batchRunEventErrorKinds.has(event.errorKind)
+            ? (event.errorKind as BatchRun['events'][number]['errorKind'])
+            : undefined,
         message: typeof event.message === 'string' ? event.message : undefined,
         startedAt: typeof event.startedAt === 'string' ? event.startedAt : undefined,
         completedAt: typeof event.completedAt === 'string' ? event.completedAt : undefined,
@@ -388,6 +426,19 @@ function normalizeBatchRun(value: unknown): BatchRun | null {
     updatedAt,
     startedAt: typeof value.startedAt === 'string' ? value.startedAt : undefined,
     completedAt: typeof value.completedAt === 'string' ? value.completedAt : undefined,
+    pauseReason:
+      value.pauseReason === 'user' ||
+      value.pauseReason === 'processing-tab-closed' ||
+      value.pauseReason === 'browser-restarted' ||
+      value.pauseReason === 'error'
+        ? value.pauseReason
+        : undefined,
+    pausedAt: typeof value.pausedAt === 'string' ? value.pausedAt : undefined,
+    resumedAt: typeof value.resumedAt === 'string' ? value.resumedAt : undefined,
+    stopRequested: typeof value.stopRequested === 'boolean' ? value.stopRequested : undefined,
+    pauseRequested: typeof value.pauseRequested === 'boolean' ? value.pauseRequested : undefined,
+    currentUrlIndex: normalizeNumber(value.currentUrlIndex, 0),
+    currentRecipeIndex: normalizeNumber(value.currentRecipeIndex, 0),
     processingTabId: typeof value.processingTabId === 'number' ? value.processingTabId : undefined,
     urls: normalizeStringArray(value.urls),
     recipeIds: normalizeStringArray(value.recipeIds),
@@ -563,6 +614,12 @@ export async function updatePreferences(partialPreferences: Partial<UserPreferen
   const nextPreferences = normalizePreferences({
     ...currentPreferences,
     ...partialPreferences,
+    batchDefaults: partialPreferences.batchDefaults
+      ? {
+          ...currentPreferences.batchDefaults,
+          ...partialPreferences.batchDefaults
+        }
+      : currentPreferences.batchDefaults,
     exportOptions: partialPreferences.exportOptions
       ? {
           ...currentPreferences.exportOptions,

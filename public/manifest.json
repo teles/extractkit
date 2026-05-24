@@ -25,7 +25,7 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "permissions": ["activeTab", "scripting", "storage", "sidePanel", "tabs"],
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel", "tabs", "webRequest"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "minimum_chrome_version": "116"
 }

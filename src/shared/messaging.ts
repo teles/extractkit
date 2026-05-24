@@ -3,6 +3,8 @@ import type { BatchRun, BatchRunOptions, CurrentTabInfo, Recipe, ScrapeResult } 
 export const MESSAGE_GET_CURRENT_TAB = 'extractkit:get-current-tab';
 export const MESSAGE_RUN_RECIPE = 'extractkit:run-recipe';
 export const MESSAGE_START_BATCH_RUN = 'extractkit:start-batch-run';
+export const MESSAGE_PAUSE_BATCH_RUN = 'extractkit:pause-batch-run';
+export const MESSAGE_RESUME_BATCH_RUN = 'extractkit:resume-batch-run';
 export const MESSAGE_STOP_BATCH_RUN = 'extractkit:stop-batch-run';
 export const MESSAGE_VIEW_BATCH_TAB = 'extractkit:view-batch-tab';
 export const CONTENT_RUN_RECIPE = 'extractkit:content-run-recipe';
@@ -29,6 +31,16 @@ export type StopBatchRunMessage = {
   batchId: string;
 };
 
+export type PauseBatchRunMessage = {
+  type: typeof MESSAGE_PAUSE_BATCH_RUN;
+  batchId: string;
+};
+
+export type ResumeBatchRunMessage = {
+  type: typeof MESSAGE_RESUME_BATCH_RUN;
+  batchId: string;
+};
+
 export type ViewBatchTabMessage = {
   type: typeof MESSAGE_VIEW_BATCH_TAB;
   batchId: string;
@@ -43,6 +55,8 @@ export type PanelMessage =
   | GetCurrentTabMessage
   | RunRecipeMessage
   | StartBatchRunMessage
+  | PauseBatchRunMessage
+  | ResumeBatchRunMessage
   | StopBatchRunMessage
   | ViewBatchTabMessage;
 export type ContentMessage = ContentRunRecipeMessage;
@@ -74,6 +88,8 @@ export function isPanelMessage(value: unknown): value is PanelMessage {
     value.type === MESSAGE_GET_CURRENT_TAB ||
     value.type === MESSAGE_RUN_RECIPE ||
     value.type === MESSAGE_START_BATCH_RUN ||
+    value.type === MESSAGE_PAUSE_BATCH_RUN ||
+    value.type === MESSAGE_RESUME_BATCH_RUN ||
     value.type === MESSAGE_STOP_BATCH_RUN ||
     value.type === MESSAGE_VIEW_BATCH_TAB
   );
