@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { runsToCsv } from './csv';
+import { createFlattenedRunsCsv, createRunsJsonl, createRunsSummaryCsv, runsToCsv } from './csv';
 import { safeFilename } from './filename';
 import type { BatchRun, Recipe, RecipeRun } from './types';
 
@@ -10,6 +10,23 @@ type ExportManifest = {
   runCount: number;
   recipeCount: number;
   batchCount?: number;
+  formats: {
+    json: true;
+    csv: true;
+    csvSummary: true;
+    csvFlattened: true;
+    jsonl: true;
+  };
+  batchSummary?: {
+    batchName: string;
+    status: BatchRun['status'];
+    urlCount: number;
+    totalPlannedRuns: number;
+    successfulRuns: number;
+    warningRuns: number;
+    failedRuns: number;
+    skippedRuns: number;
+  };
 };
 
 function jsonFile(value: unknown): string {
@@ -25,6 +42,19 @@ function runName(run: RecipeRun): string {
   return safeFilename(`${date}-${run.recipeName}-${run.id}`, run.id);
 }
 
+function batchSummary(batch: BatchRun): ExportManifest['batchSummary'] {
+  return {
+    batchName: batch.name,
+    status: batch.status,
+    urlCount: batch.urls.length,
+    totalPlannedRuns: batch.totalPlannedRuns,
+    successfulRuns: batch.successfulRuns,
+    warningRuns: batch.warningRuns,
+    failedRuns: batch.failedRuns,
+    skippedRuns: batch.skippedRuns
+  };
+}
+
 export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batches: BatchRun[] = []): Promise<Blob> {
   const zip = new JSZip();
   const recipeIds = new Set(runs.map((run) => run.recipeId));
@@ -35,7 +65,15 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batc
     exportedAt: new Date().toISOString(),
     runCount: runs.length,
     recipeCount: includedRecipes.length,
-    batchCount: batches.length || undefined
+    batchCount: batches.length || undefined,
+    formats: {
+      json: true,
+      csv: true,
+      csvSummary: true,
+      csvFlattened: true,
+      jsonl: true
+    },
+    batchSummary: batches.length === 1 ? batchSummary(batches[0]) : undefined
   };
 
   zip.file('manifest.json', jsonFile(manifest));
@@ -50,6 +88,9 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batc
 
   zip.file('data/all-runs.json', jsonFile(runs));
   zip.file('data/all-runs.csv', runsToCsv(runs));
+  zip.file('data/runs-summary.csv', createRunsSummaryCsv(runs));
+  zip.file('data/runs-flattened.csv', createFlattenedRunsCsv(runs));
+  zip.file('data/all-runs.jsonl', createRunsJsonl(runs));
   if (batches.length > 0) {
     zip.file('data/batches.json', jsonFile(batches));
   }
