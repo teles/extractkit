@@ -1,6 +1,7 @@
 import type {
   CheckSeverity,
   LocalePreference,
+  OnboardingState,
   Recipe,
   RecipeCategory,
   RecipeCheck,
@@ -16,18 +17,31 @@ import type {
 const RECIPES_KEY = 'recipesById';
 const RUNS_KEY = 'runsById';
 const PREFERENCES_KEY = 'preferences';
+const ONBOARDING_KEY = 'onboarding';
 
-type StorageKey = typeof RECIPES_KEY | typeof RUNS_KEY | typeof PREFERENCES_KEY;
+type StorageKey = typeof RECIPES_KEY | typeof RUNS_KEY | typeof PREFERENCES_KEY | typeof ONBOARDING_KEY;
 
 type StorageShape = {
   [RECIPES_KEY]: RecipesById;
   [RUNS_KEY]: RunsById;
   [PREFERENCES_KEY]: UserPreferences;
+  [ONBOARDING_KEY]: OnboardingState;
 };
+
+function defaultOnboardingState(): OnboardingState {
+  return {
+    completed: false,
+    selectedStarterRecipeIds: []
+  };
+}
 
 function defaultValue<K extends StorageKey>(key: K): StorageShape[K] {
   if (key === PREFERENCES_KEY) {
     return defaultPreferences() as StorageShape[K];
+  }
+
+  if (key === ONBOARDING_KEY) {
+    return defaultOnboardingState() as StorageShape[K];
   }
 
   return {} as StorageShape[K];
@@ -387,4 +401,45 @@ export async function updatePreferences(partialPreferences: Partial<UserPreferen
 
   await savePreferences(nextPreferences);
   return nextPreferences;
+}
+
+export async function getOnboardingState(): Promise<OnboardingState> {
+  const raw = await getStorageValue(ONBOARDING_KEY);
+  if (typeof raw?.completed !== 'boolean') {
+    return defaultOnboardingState();
+  }
+  return {
+    completed: raw.completed,
+    completedAt: typeof raw.completedAt === 'string' ? raw.completedAt : undefined,
+    skipped: typeof raw.skipped === 'boolean' ? raw.skipped : undefined,
+    selectedStarterRecipeIds: Array.isArray(raw.selectedStarterRecipeIds)
+      ? (raw.selectedStarterRecipeIds as string[]).filter((id): id is string => typeof id === 'string')
+      : []
+  };
+}
+
+export async function saveOnboardingState(state: OnboardingState): Promise<void> {
+  await setStorageValue(ONBOARDING_KEY, state);
+}
+
+export async function completeOnboarding(selectedStarterRecipeIds: string[]): Promise<void> {
+  await saveOnboardingState({
+    completed: true,
+    completedAt: new Date().toISOString(),
+    skipped: false,
+    selectedStarterRecipeIds
+  });
+}
+
+export async function skipOnboarding(): Promise<void> {
+  await saveOnboardingState({
+    completed: true,
+    completedAt: new Date().toISOString(),
+    skipped: true,
+    selectedStarterRecipeIds: []
+  });
+}
+
+export async function resetOnboarding(): Promise<void> {
+  await saveOnboardingState(defaultOnboardingState());
 }

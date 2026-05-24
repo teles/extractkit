@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HomePage from './pages/HomePage.vue';
+import OnboardingPage from './pages/OnboardingPage.vue';
 import RecipesPage from './pages/RecipesPage.vue';
 import RunsPage from './pages/RunsPage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
@@ -30,6 +31,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: SettingsPage
+    },
+    {
+      path: '/onboarding',
+      name: 'onboarding',
+      component: OnboardingPage
     }
   ]
 });

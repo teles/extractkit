@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ArchiveRestore, HardDrive, Palette, Settings as SettingsIcon, ShieldCheck } from '@lucide/vue';
+import { ArchiveRestore, HardDrive, PackagePlus, Palette, Settings as SettingsIcon, ShieldCheck } from '@lucide/vue';
 import { computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useExport } from '../../composables/useExport';
 import { useRecipes } from '../../composables/useRecipes';
 import { useRuns } from '../../composables/useRuns';
 import { useSettings } from '../../composables/useSettings';
 import { useToast } from '../../composables/useToast';
 import { restoreDefaultRecipes } from '../../shared/default-recipes';
+import { resetOnboarding } from '../../shared/storage';
 import type { LocalePreference, ThemePreference } from '../../shared/types';
 import Button from '../components/Button.vue';
 import PageHeader from '../components/PageHeader.vue';
@@ -20,6 +22,7 @@ const { recipes, loadRecipes } = useRecipes();
 const { runs, clearRuns, loadRuns } = useRuns();
 const { exporting, error: exportError, exportRuns } = useExport();
 const { success: toastSuccess, info: toastInfo, error: toastError } = useToast();
+const router = useRouter();
 
 const themeOptions = computed<Array<{ value: ThemePreference; label: string }>>(() => [
   { value: 'system', label: t('settings.system') },
@@ -71,6 +74,11 @@ async function restoreDefaults(): Promise<void> {
   const restoredCount = await restoreDefaultRecipes();
   await refreshLocalData();
   toastSuccess(`${t('settings.defaultsRestored')} (${restoredCount})`);
+}
+
+async function runSetupAgain(): Promise<void> {
+  await resetOnboarding();
+  await router.push('/onboarding');
 }
 </script>
 
@@ -127,6 +135,12 @@ async function restoreDefaults(): Promise<void> {
     <SettingsCard :title="t('settings.defaultRecipes')" :description="t('settings.defaultRecipesDescription')" :icon="ArchiveRestore" icon-tone="brand">
       <Button size="xs" @click="restoreDefaults">
         {{ t("settings.restoreDefaultRecipes") }}
+      </Button>
+    </SettingsCard>
+
+    <SettingsCard :title="t('settings.starterSetup')" :description="t('settings.starterSetupDescription')" :icon="PackagePlus" icon-tone="brand">
+      <Button size="xs" variant="primary" @click="runSetupAgain">
+        {{ t("settings.runSetupAgain") }}
       </Button>
     </SettingsCard>
 

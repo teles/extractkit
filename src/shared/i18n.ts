@@ -223,7 +223,25 @@ export type TranslationKey =
   | 'toast.recipeDeleted'
   | 'toast.recipeDuplicated'
   | 'toast.exported'
-  | 'toast.exportFailed';
+  | 'toast.exportFailed'
+  | 'onboarding.welcomeTitle'
+  | 'onboarding.welcomeSubtitle'
+  | 'onboarding.welcomeHint1'
+  | 'onboarding.welcomeHint2'
+  | 'onboarding.welcomeHint3'
+  | 'onboarding.getStarted'
+  | 'onboarding.skip'
+  | 'onboarding.starterTitle'
+  | 'onboarding.starterSubtitle'
+  | 'onboarding.installSelected'
+  | 'onboarding.installRecommended'
+  | 'onboarding.skipForNow'
+  | 'onboarding.back'
+  | 'settings.starterSetup'
+  | 'settings.starterSetupDescription'
+  | 'settings.runSetupAgain'
+  | 'toast.starterInstalled'
+  | 'toast.setupSkipped';
 
 type Dictionary = Record<TranslationKey, string>;
 
@@ -449,7 +467,25 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'toast.recipeDeleted': 'Recipe deleted.',
     'toast.recipeDuplicated': 'Recipe duplicated.',
     'toast.exported': 'Export completed.',
-    'toast.exportFailed': 'Export failed.'
+    'toast.exportFailed': 'Export failed.',
+    'onboarding.welcomeTitle': 'Welcome to ExtractKit',
+    'onboarding.welcomeSubtitle': 'Turn web pages into structured JSON with reusable extraction recipes.',
+    'onboarding.welcomeHint1': 'Recipes define what to extract from a page.',
+    'onboarding.welcomeHint2': 'Runs execute recipes on the active tab.',
+    'onboarding.welcomeHint3': 'Results stay local in your browser.',
+    'onboarding.getStarted': 'Get started',
+    'onboarding.skip': 'Skip setup',
+    'onboarding.starterTitle': 'Choose starter recipes',
+    'onboarding.starterSubtitle': 'Install a few local recipes to start extracting data right away.',
+    'onboarding.installSelected': 'Install selected recipes',
+    'onboarding.installRecommended': 'Install recommended',
+    'onboarding.skipForNow': 'Skip for now',
+    'onboarding.back': 'Back',
+    'settings.starterSetup': 'Starter setup',
+    'settings.starterSetupDescription': 'Choose or restore starter recipes for this browser.',
+    'settings.runSetupAgain': 'Run setup again',
+    'toast.starterInstalled': 'Starter recipes installed.',
+    'toast.setupSkipped': 'Setup skipped.'
   },
   'pt-BR': {
     'nav.home': 'Execução',
@@ -673,7 +709,25 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'toast.recipeDeleted': 'Receita excluída.',
     'toast.recipeDuplicated': 'Receita duplicada.',
     'toast.exported': 'Exportação concluída.',
-    'toast.exportFailed': 'Falha ao exportar.'
+    'toast.exportFailed': 'Falha ao exportar.',
+    'onboarding.welcomeTitle': 'Boas-vindas ao ExtractKit',
+    'onboarding.welcomeSubtitle': 'Transforme páginas web em JSON estruturado com receitas reutilizáveis de extração.',
+    'onboarding.welcomeHint1': 'Receitas definem o que extrair de uma página.',
+    'onboarding.welcomeHint2': 'Execuções rodam receitas na aba ativa.',
+    'onboarding.welcomeHint3': 'Os resultados ficam locais no seu navegador.',
+    'onboarding.getStarted': 'Começar',
+    'onboarding.skip': 'Pular configuração',
+    'onboarding.starterTitle': 'Escolha receitas iniciais',
+    'onboarding.starterSubtitle': 'Instale algumas receitas locais para começar a extrair dados imediatamente.',
+    'onboarding.installSelected': 'Instalar receitas selecionadas',
+    'onboarding.installRecommended': 'Instalar recomendadas',
+    'onboarding.skipForNow': 'Pular por enquanto',
+    'onboarding.back': 'Voltar',
+    'settings.starterSetup': 'Configuração inicial',
+    'settings.starterSetupDescription': 'Escolha ou restaure receitas iniciais para este navegador.',
+    'settings.runSetupAgain': 'Rodar configuração novamente',
+    'toast.starterInstalled': 'Receitas iniciais instaladas.',
+    'toast.setupSkipped': 'Configuração pulada.'
   }
 };
 

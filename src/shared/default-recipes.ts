@@ -515,3 +515,15 @@ export async function ensureDefaultRecipes(): Promise<void> {
 
   await restoreMissingDefaultChecks(recipes, getDefaultRecipes());
 }
+
+export async function ensureSelectedDefaultRecipes(recipeIds: string[]): Promise<void> {
+  const defaultRecipesById = new Map(getDefaultRecipes().map((r) => [r.id, r]));
+  const existingIds = new Set((await listRecipes()).map((r) => r.id));
+
+  for (const id of recipeIds) {
+    const recipe = defaultRecipesById.get(id);
+    if (recipe && !existingIds.has(id)) {
+      await saveRecipe(recipe);
+    }
+  }
+}

@@ -222,3 +222,10 @@ export type UserPreferences = {
     includeManifest: boolean;
   };
 };
+
+export type OnboardingState = {
+  completed: boolean;
+  completedAt?: string;
+  skipped?: boolean;
+  selectedStarterRecipeIds: string[];
+};
