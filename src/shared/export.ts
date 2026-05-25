@@ -1,6 +1,15 @@
 import JSZip from 'jszip';
-import { createFlattenedRunsCsv, createRunsJsonl, createRunsSummaryCsv, runsToCsv } from './csv';
+import {
+  createFlattenedRunsCsv,
+  createNestedCollectionCsvs,
+  createRecipeCsv,
+  createRunsJsonl,
+  createRunsSummaryCsv,
+  groupRunsByRecipe,
+  runsToCsv
+} from './csv';
 import { safeFilename } from './filename';
+import { createAllRunsMarkdown, createRunMarkdown } from './markdown';
 import type { BatchRun, Recipe, RecipeRun } from './types';
 
 type ExportManifest = {
@@ -16,6 +25,14 @@ type ExportManifest = {
     csvSummary: true;
     csvFlattened: true;
     jsonl: true;
+    csvByRecipe: true;
+    csvNestedCollections: true;
+    markdown: true;
+  };
+  fileCounts?: {
+    recipeCsv: number;
+    nestedCsv: number;
+    markdownRuns: number;
   };
   batchSummary?: {
     batchName: string;
@@ -59,6 +76,8 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batc
   const zip = new JSZip();
   const recipeIds = new Set(runs.map((run) => run.recipeId));
   const includedRecipes = recipes.filter((recipe) => recipeIds.has(recipe.id));
+  const runsByRecipe = groupRunsByRecipe(runs);
+  const nestedCollectionCsvs = createNestedCollectionCsvs(runs);
   const manifest: ExportManifest = {
     app: 'ExtractKit',
     formatVersion: '1',
@@ -71,7 +90,15 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batc
       csv: true,
       csvSummary: true,
       csvFlattened: true,
-      jsonl: true
+      jsonl: true,
+      csvByRecipe: true,
+      csvNestedCollections: true,
+      markdown: true
+    },
+    fileCounts: {
+      recipeCsv: runsByRecipe.size,
+      nestedCsv: nestedCollectionCsvs.length,
+      markdownRuns: runs.length
     },
     batchSummary: batches.length === 1 ? batchSummary(batches[0]) : undefined
   };
@@ -91,6 +118,22 @@ export async function exportRunsToZip(runs: RecipeRun[], recipes: Recipe[], batc
   zip.file('data/runs-summary.csv', createRunsSummaryCsv(runs));
   zip.file('data/runs-flattened.csv', createFlattenedRunsCsv(runs));
   zip.file('data/all-runs.jsonl', createRunsJsonl(runs));
+
+  for (const [recipeId, recipeRuns] of runsByRecipe) {
+    zip.file(`data/by-recipe/${safeFilename(recipeId, 'recipe')}.csv`, createRecipeCsv(recipeRuns));
+  }
+
+  for (const nestedCsv of nestedCollectionCsvs) {
+    const recipeFileName = safeFilename(nestedCsv.recipeId, 'recipe');
+    const fieldFileName = safeFilename(nestedCsv.fieldKey ?? 'items', 'items');
+    zip.file(`data/by-recipe/nested/${recipeFileName}--${fieldFileName}.csv`, nestedCsv.csv);
+  }
+
+  zip.file('data/markdown/all-runs.md', createAllRunsMarkdown(runs, batches));
+  for (const run of runs) {
+    zip.file(`data/markdown/runs/${safeFilename(run.id, 'run')}.md`, createRunMarkdown(run));
+  }
+
   if (batches.length > 0) {
     zip.file('data/batches.json', jsonFile(batches));
   }

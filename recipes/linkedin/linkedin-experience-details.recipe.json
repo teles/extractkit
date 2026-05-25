@@ -1,0 +1,168 @@
+{
+  "id": "linkedin-experience-details",
+  "name": "LinkedIn - Experience Details",
+  "description": "Extracts the visible experience list from a LinkedIn profile experience details page.",
+  "category": "social",
+  "tags": ["linkedin", "profile", "experience", "jobs"],
+  "source": "user",
+  "urlPatterns": ["/^https:\\/\\/(?:www\\.)?linkedin\\.com\\/in\\/[^/]+\\/details\\/experience\\/?(?:[?#].*)?$/"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-24T00:00:00.000Z",
+  "updatedAt": "2026-05-24T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "linkedin-experience-details-profile-url",
+      "kind": "field",
+      "key": "profileUrl",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] a[href*=\"/in/\"]:not([href*=\"overlay\"])",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"]
+    },
+    {
+      "id": "linkedin-experience-details-count",
+      "kind": "field",
+      "key": "experienceCount",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] [componentkey^=\"entity-collection-item\"]",
+      "extract": "count",
+      "required": true
+    },
+    {
+      "id": "linkedin-experience-details-experiences",
+      "kind": "group",
+      "key": "experiences",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] [componentkey^=\"entity-collection-item\"]",
+      "multiple": true,
+      "required": true,
+      "fields": [
+        {
+          "id": "linkedin-experience-details-item-key",
+          "kind": "field",
+          "key": "itemKey",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "componentkey"
+        },
+        {
+          "id": "linkedin-experience-details-item-text",
+          "kind": "field",
+          "key": "rawText",
+          "selector": ":scope",
+          "extract": "text",
+          "required": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-experience-details-lines",
+          "kind": "field",
+          "key": "lines",
+          "selector": "p",
+          "extract": "text",
+          "multiple": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-experience-details-company-url",
+          "kind": "field",
+          "key": "companyUrl",
+          "selector": "a[href*=\"/company/\"]",
+          "extract": "attribute",
+          "attribute": "href",
+          "transforms": ["absoluteUrl"]
+        },
+        {
+          "id": "linkedin-experience-details-company-links",
+          "kind": "field",
+          "key": "companyLinks",
+          "selector": "a[href*=\"/company/\"]",
+          "extract": "attribute",
+          "attribute": "href",
+          "multiple": true,
+          "transforms": ["absoluteUrl"]
+        },
+        {
+          "id": "linkedin-experience-details-company-logo",
+          "kind": "field",
+          "key": "companyLogoUrl",
+          "selector": "img[alt*=\" logo\"]",
+          "extract": "attribute",
+          "attribute": "src",
+          "transforms": ["absoluteUrl"]
+        },
+        {
+          "id": "linkedin-experience-details-descriptions",
+          "kind": "field",
+          "key": "descriptions",
+          "selector": "[data-testid=\"expandable-text-box\"]",
+          "extract": "text",
+          "multiple": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-experience-details-skills",
+          "kind": "field",
+          "key": "skills",
+          "selector": "a[href*=\"skill-associations-details\"]",
+          "extract": "text",
+          "multiple": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-experience-details-related-links",
+          "kind": "field",
+          "key": "relatedLinks",
+          "selector": "a[href]:not([href*=\"/company/\"]):not([href*=\"skill-associations-details\"]):not([href*=\"/in/\"])",
+          "extract": "attribute",
+          "attribute": "href",
+          "multiple": true,
+          "transforms": ["absoluteUrl"]
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "linkedin-experience-details-section-exists",
+      "name": "Experience section exists",
+      "description": "The page should be a LinkedIn experience details page with an experience details section.",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "error"
+    },
+    {
+      "id": "linkedin-experience-details-has-items",
+      "name": "At least one experience exists",
+      "description": "The experience details page should include at least one experience item.",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] [componentkey^=\"entity-collection-item\"]",
+      "assertion": {
+        "type": "countGreaterThan",
+        "value": 0
+      },
+      "severity": "error"
+    },
+    {
+      "id": "linkedin-experience-details-items-have-text",
+      "name": "Each experience has visible text",
+      "description": "Every experience card should have visible text content.",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] [componentkey^=\"entity-collection-item\"]",
+      "assertion": {
+        "type": "eachElementMustHave",
+        "selector": "p"
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "linkedin-experience-details-items-should-link-company",
+      "name": "Experience items should link to a company",
+      "description": "Most LinkedIn experience items include a company link, but some older/manual entries may not.",
+      "selector": "[data-testid^=\"profile_ExperienceDetailsSection\"] [componentkey^=\"entity-collection-item\"]",
+      "assertion": {
+        "type": "eachElementShouldHave",
+        "selector": "a[href*=\"/company/\"]"
+      },
+      "severity": "info"
+    }
+  ]
+}

@@ -1,6 +1,11 @@
 import type { RecipeRun } from './types';
 
 type CsvValue = string | number | boolean | null | undefined;
+export type CsvFile = {
+  recipeId: string;
+  fieldKey?: string;
+  csv: string;
+};
 
 function csvEscape(value: unknown): string {
   const text =
@@ -50,6 +55,31 @@ function cellValue(value: unknown): CsvValue {
   }
 
   return compactJson(value);
+}
+
+function runMetadataRow(run: RecipeRun): CsvValue[] {
+  return [
+    run.id,
+    run.batchId ?? '',
+    run.batchName ?? '',
+    run.recipeId,
+    run.recipeName,
+    run.recipeVersion,
+    run.url,
+    run.domain,
+    run.status,
+    run.validation?.status ?? '',
+    run.checks?.status ?? '',
+    run.checks?.passed ?? '',
+    run.checks?.warnings ?? '',
+    run.checks?.errors ?? '',
+    run.durationMs,
+    run.createdAt
+  ];
+}
+
+function isObjectArray(value: unknown): value is Record<string, unknown>[] {
+  return Array.isArray(value) && value.some(isRecord);
 }
 
 export function flattenObjectForCsv(value: unknown, prefix = ''): Record<string, CsvValue> {
@@ -155,6 +185,112 @@ export function createRunsSummaryCsv(runs: RecipeRun[]): string {
   ]);
 
   return createCsv(headers, rows);
+}
+
+export function groupRunsByRecipe(runs: RecipeRun[]): Map<string, RecipeRun[]> {
+  return runs.reduce<Map<string, RecipeRun[]>>((groups, run) => {
+    groups.set(run.recipeId, [...(groups.get(run.recipeId) ?? []), run]);
+    return groups;
+  }, new Map());
+}
+
+export function createRecipeCsv(runs: RecipeRun[]): string {
+  const metadataHeaders = [
+    'runId',
+    'batchId',
+    'batchName',
+    'recipeId',
+    'recipeName',
+    'recipeVersion',
+    'url',
+    'domain',
+    'status',
+    'validationStatus',
+    'checksStatus',
+    'checksPassed',
+    'checksWarnings',
+    'checksErrors',
+    'durationMs',
+    'createdAt'
+  ];
+  const flattenedRows = runs.map((run) => flattenObjectForCsv(run.data, 'data'));
+  const dataHeaders = Array.from(new Set(flattenedRows.flatMap((row) => Object.keys(row)))).sort();
+  const headers = [...metadataHeaders, ...dataHeaders];
+  const rows = runs.map((run, index) => [
+    ...runMetadataRow(run),
+    ...dataHeaders.map((header) => flattenedRows[index]?.[header] ?? '')
+  ]);
+
+  return createCsv(headers, rows);
+}
+
+export function createNestedCollectionCsvs(runs: RecipeRun[]): CsvFile[] {
+  const files: CsvFile[] = [];
+
+  for (const [recipeId, recipeRuns] of groupRunsByRecipe(runs)) {
+    const fieldKeys = Array.from(
+      new Set(
+        recipeRuns.flatMap((run) =>
+          isRecord(run.data)
+            ? Object.entries(run.data)
+                .filter(([, value]) => isObjectArray(value))
+                .map(([key]) => key)
+            : []
+        )
+      )
+    ).sort();
+
+    for (const fieldKey of fieldKeys) {
+      const itemRows = recipeRuns.flatMap((run) => {
+        if (!isRecord(run.data) || !isObjectArray(run.data[fieldKey])) {
+          return [];
+        }
+
+        return run.data[fieldKey].filter(isRecord).map((item, itemIndex) => ({
+          run,
+          itemIndex,
+          flattened: flattenObjectForCsv(item)
+        }));
+      });
+
+      if (itemRows.length === 0) {
+        continue;
+      }
+
+      const metadataHeaders = [
+        'runId',
+        'batchId',
+        'batchName',
+        'recipeId',
+        'recipeName',
+        'url',
+        'domain',
+        'parentCreatedAt',
+        'itemIndex'
+      ];
+      const itemHeaders = Array.from(new Set(itemRows.flatMap((row) => Object.keys(row.flattened)))).sort();
+      const rows = itemRows.map(({ run, itemIndex, flattened }) => [
+        run.id,
+        run.batchId ?? '',
+        run.batchName ?? '',
+        run.recipeId,
+        run.recipeName,
+        run.url,
+        run.domain,
+        run.createdAt,
+        itemIndex,
+        ...itemHeaders.map((header) => flattened[header] ?? '')
+      ]);
+
+      files.push({
+        recipeId,
+        fieldKey,
+        csv: createCsv([...metadataHeaders, ...itemHeaders], rows)
+      });
+    }
+  }
+
+  return files;
 }
 
 export function createFlattenedRunsCsv(runs: RecipeRun[]): string {

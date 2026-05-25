@@ -5,10 +5,8 @@ import { useSettings } from '../../composables/useSettings';
 import type { RecipeRun } from '../../shared/types';
 import Badge from './Badge.vue';
 import Button from './Button.vue';
-import ChecksSummary from './ChecksSummary.vue';
-import JsonPreview from './JsonPreview.vue';
+import ResultPreviewTabs from './ResultPreviewTabs.vue';
 import StatusBadge from './StatusBadge.vue';
-import ValidationSummary from './ValidationSummary.vue';
 
 const props = defineProps<{
   run: RecipeRun;
@@ -152,7 +150,7 @@ function formatDuration(milliseconds: number): string {
       <div class="mt-3 flex flex-wrap gap-1.5">
         <Button size="xs" @click="expanded = !expanded">
           <Eye class="h-3.5 w-3.5" aria-hidden="true" />
-          {{ t('data.viewJson') }}
+          {{ t('data.viewDetails') }}
         </Button>
         <Button size="xs" @click="emit('export', run)">
           <Download class="h-3.5 w-3.5" aria-hidden="true" />
@@ -172,10 +170,8 @@ function formatDuration(milliseconds: number): string {
       </div>
     </div>
 
-    <div v-if="expanded" class="space-y-3 border-t border-ink-200 bg-ink-50 p-3 dark:border-ink-700 dark:bg-ink-900">
-      <ValidationSummary :validation="run.validation" />
-      <ChecksSummary :checks="run.checks" show-all-results />
-      <JsonPreview :value="run.data" />
+    <div v-if="expanded" class="border-t border-ink-200 bg-ink-50 p-3 dark:border-ink-700 dark:bg-ink-900">
+      <ResultPreviewTabs :run="run" />
     </div>
   </article>
 </template>

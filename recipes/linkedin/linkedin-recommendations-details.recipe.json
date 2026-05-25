@@ -1,0 +1,146 @@
+{
+  "id": "linkedin-recommendations-details",
+  "name": "LinkedIn - Recommendations Details",
+  "description": "Extracts received recommendation cards from a LinkedIn recommendations details page.",
+  "category": "social",
+  "tags": ["linkedin", "profile", "recommendations", "people"],
+  "source": "user",
+  "urlPatterns": ["/^https:\\/\\/(?:www\\.)?linkedin\\.com\\/in\\/[^/]+\\/details\\/recommendations\\/?(?:[?#].*)?$/"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-24T00:00:00.000Z",
+  "updatedAt": "2026-05-24T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "linkedin-recommendations-details-count",
+      "kind": "field",
+      "key": "recommendationCount",
+      "selector": "[componentkey*=\"RecommendationsDetails\"] [data-testid=\"lazy-column\"] > div:last-child > div",
+      "extract": "count",
+      "required": true
+    },
+    {
+      "id": "linkedin-recommendations-details-recommendations",
+      "kind": "group",
+      "key": "recommendations",
+      "selector": "[componentkey*=\"RecommendationsDetails\"] [data-testid=\"lazy-column\"] > div:last-child > div",
+      "multiple": true,
+      "required": true,
+      "fields": [
+        {
+          "id": "linkedin-recommendations-details-recommender-name",
+          "kind": "field",
+          "key": "recommenderName",
+          "selector": "p:first-of-type",
+          "extract": "text",
+          "required": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-recommendations-details-recommender-url",
+          "kind": "field",
+          "key": "recommenderUrl",
+          "selector": "a[href*=\"/in/\"]",
+          "extract": "attribute",
+          "attribute": "href",
+          "required": true,
+          "transforms": ["absoluteUrl"]
+        },
+        {
+          "id": "linkedin-recommendations-details-recommender-photo",
+          "kind": "field",
+          "key": "recommenderPhotoUrl",
+          "selector": "img",
+          "extract": "attribute",
+          "attribute": "src",
+          "transforms": ["absoluteUrl"]
+        },
+        {
+          "id": "linkedin-recommendations-details-degree",
+          "kind": "field",
+          "key": "relationshipDegree",
+          "selector": "p:nth-of-type(2)",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-recommendations-details-headline",
+          "kind": "field",
+          "key": "recommenderHeadline",
+          "selector": "p:nth-of-type(3)",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-recommendations-details-context",
+          "kind": "field",
+          "key": "recommendationContext",
+          "selector": "p:nth-of-type(4)",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-recommendations-details-text",
+          "kind": "field",
+          "key": "recommendationText",
+          "selector": "[data-testid=\"expandable-text-box\"]",
+          "extract": "text",
+          "required": true,
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-recommendations-details-raw-text",
+          "kind": "field",
+          "key": "rawText",
+          "selector": ":scope",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "linkedin-recommendations-details-section-exists",
+      "name": "Recommendations section exists",
+      "description": "The page should be a LinkedIn recommendations details page.",
+      "selector": "[componentkey*=\"RecommendationsDetails\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "error"
+    },
+    {
+      "id": "linkedin-recommendations-details-has-items",
+      "name": "At least one recommendation exists",
+      "description": "The recommendations page should include at least one recommendation card.",
+      "selector": "[componentkey*=\"RecommendationsDetails\"] [data-testid=\"lazy-column\"] > div:last-child > div",
+      "assertion": {
+        "type": "countGreaterThan",
+        "value": 0
+      },
+      "severity": "error"
+    },
+    {
+      "id": "linkedin-recommendations-details-items-have-profile-link",
+      "name": "Each recommendation links to a profile",
+      "description": "Every recommendation card should link to the recommender profile.",
+      "selector": "[componentkey*=\"RecommendationsDetails\"] [data-testid=\"lazy-column\"] > div:last-child > div",
+      "assertion": {
+        "type": "eachElementMustHave",
+        "selector": "a[href*=\"/in/\"]"
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "linkedin-recommendations-details-items-have-text",
+      "name": "Each recommendation has text",
+      "description": "Every recommendation card should have visible recommendation text.",
+      "selector": "[componentkey*=\"RecommendationsDetails\"] [data-testid=\"lazy-column\"] > div:last-child > div",
+      "assertion": {
+        "type": "eachElementMustHave",
+        "selector": "[data-testid=\"expandable-text-box\"]"
+      },
+      "severity": "warning"
+    }
+  ]
+}

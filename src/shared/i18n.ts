@@ -40,6 +40,13 @@ export type TranslationKey =
   | 'home.warnings'
   | 'home.errors'
   | 'home.runField'
+  | 'preview.readable'
+  | 'preview.json'
+  | 'preview.checks'
+  | 'preview.copyMarkdown'
+  | 'preview.markdownCopied'
+  | 'preview.noItems'
+  | 'preview.notAvailable'
   | 'status.success'
   | 'status.partial'
   | 'status.error'
@@ -415,6 +422,13 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'home.warnings': 'Warnings',
     'home.errors': 'Errors',
     'home.runField': 'run',
+    'preview.readable': 'Readable',
+    'preview.json': 'JSON',
+    'preview.checks': 'Checks',
+    'preview.copyMarkdown': 'Copy Markdown',
+    'preview.markdownCopied': 'Markdown copied.',
+    'preview.noItems': 'No items.',
+    'preview.notAvailable': 'Not available',
     'status.success': 'OK',
     'status.partial': 'Partial',
     'status.error': 'Error',
@@ -789,6 +803,13 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'home.warnings': 'Alertas',
     'home.errors': 'Erros',
     'home.runField': 'execução',
+    'preview.readable': 'Legível',
+    'preview.json': 'JSON',
+    'preview.checks': 'Checks',
+    'preview.copyMarkdown': 'Copiar Markdown',
+    'preview.markdownCopied': 'Markdown copiado.',
+    'preview.noItems': 'Nenhum item.',
+    'preview.notAvailable': 'Não disponível',
     'status.success': 'OK',
     'status.partial': 'Parcial',
     'status.error': 'Erro',

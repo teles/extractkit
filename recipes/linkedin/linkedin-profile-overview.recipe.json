@@ -1,0 +1,170 @@
+{
+  "id": "linkedin-profile-overview",
+  "name": "LinkedIn - Profile Overview",
+  "description": "Extracts stable overview data from a LinkedIn profile page: top card, about text, top skills and profile sections.",
+  "category": "social",
+  "tags": ["linkedin", "profile", "people", "overview"],
+  "source": "user",
+  "urlPatterns": ["/^https:\\/\\/(?:www\\.)?linkedin\\.com\\/in\\/[^/?#]+\\/?(?:[?#].*)?$/"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-24T00:00:00.000Z",
+  "updatedAt": "2026-05-24T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "linkedin-profile-overview-name",
+      "kind": "field",
+      "key": "name",
+      "selector": "[componentkey*=\"Topcard\"] h2",
+      "extract": "text",
+      "required": true,
+      "transforms": ["trim", "removeExtraSpaces"]
+    },
+    {
+      "id": "linkedin-profile-overview-profile-url",
+      "kind": "field",
+      "key": "profileUrl",
+      "selector": "[componentkey*=\"Topcard\"] a[href*=\"/in/\"]:not([href*=\"overlay\"]):not([href*=\"search\"])",
+      "extract": "attribute",
+      "attribute": "href",
+      "required": true,
+      "transforms": ["absoluteUrl"]
+    },
+    {
+      "id": "linkedin-profile-overview-profile-photo",
+      "kind": "field",
+      "key": "profilePhotoUrl",
+      "selector": "[componentkey*=\"Topcard\"] img:not([alt=\"Cover photo\"])",
+      "extract": "attribute",
+      "attribute": "src",
+      "transforms": ["absoluteUrl"]
+    },
+    {
+      "id": "linkedin-profile-overview-cover-photo",
+      "kind": "field",
+      "key": "coverPhotoUrl",
+      "selector": "[componentkey*=\"Topcard\"] img[alt=\"Cover photo\"]",
+      "extract": "attribute",
+      "attribute": "src",
+      "transforms": ["absoluteUrl"]
+    },
+    {
+      "id": "linkedin-profile-overview-top-card-text",
+      "kind": "field",
+      "key": "topCardText",
+      "selector": "[componentkey*=\"Topcard\"]",
+      "extract": "text",
+      "required": true,
+      "transforms": ["trim", "removeExtraSpaces"]
+    },
+    {
+      "id": "linkedin-profile-overview-top-card-lines",
+      "kind": "field",
+      "key": "topCardLines",
+      "selector": "[componentkey*=\"Topcard\"] p",
+      "extract": "text",
+      "multiple": true,
+      "transforms": ["trim", "removeExtraSpaces"]
+    },
+    {
+      "id": "linkedin-profile-overview-about",
+      "kind": "field",
+      "key": "about",
+      "selector": "[componentkey*=\"About\"] [data-testid=\"expandable-text-box\"]",
+      "extract": "text",
+      "transforms": ["trim", "removeExtraSpaces"]
+    },
+    {
+      "id": "linkedin-profile-overview-about-lines",
+      "kind": "field",
+      "key": "aboutLines",
+      "selector": "[componentkey*=\"About\"] p",
+      "extract": "text",
+      "multiple": true,
+      "transforms": ["trim", "removeExtraSpaces"]
+    },
+    {
+      "id": "linkedin-profile-overview-top-skills-url",
+      "kind": "field",
+      "key": "topSkillsUrl",
+      "selector": "[componentkey*=\"About\"] a[href*=\"top-skills-details\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"]
+    },
+    {
+      "id": "linkedin-profile-overview-sections",
+      "kind": "group",
+      "key": "sections",
+      "selector": "section[componentkey*=\"profile.card\"][componentkey*=\"TopLevel\"], section[componentkey*=\"profile.card\"][componentkey*=\"About\"], section[componentkey*=\"profile.card\"][componentkey*=\"Featured\"], section[componentkey*=\"profile.card\"][componentkey*=\"Services\"], section[componentkey*=\"profile.card\"][componentkey*=\"RecommendationsTopLevel\"], section[componentkey*=\"Activity\"]",
+      "multiple": true,
+      "fields": [
+        {
+          "id": "linkedin-profile-overview-section-key",
+          "kind": "field",
+          "key": "sectionKey",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "componentkey"
+        },
+        {
+          "id": "linkedin-profile-overview-section-title",
+          "kind": "field",
+          "key": "title",
+          "selector": "h2, p",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-profile-overview-section-text",
+          "kind": "field",
+          "key": "text",
+          "selector": ":scope",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"]
+        },
+        {
+          "id": "linkedin-profile-overview-section-links",
+          "kind": "field",
+          "key": "links",
+          "selector": "a[href]",
+          "extract": "attribute",
+          "attribute": "href",
+          "multiple": true,
+          "transforms": ["absoluteUrl"]
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "linkedin-profile-overview-topcard-exists",
+      "name": "Top card exists",
+      "description": "LinkedIn profile overview needs the main profile top card.",
+      "selector": "[componentkey*=\"Topcard\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "error"
+    },
+    {
+      "id": "linkedin-profile-overview-name-exists",
+      "name": "Profile name exists",
+      "description": "The profile top card should contain a visible name.",
+      "selector": "[componentkey*=\"Topcard\"] h2",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "linkedin-profile-overview-about-exists",
+      "name": "About section exists",
+      "description": "The profile may include an About section with summary text.",
+      "selector": "[componentkey*=\"About\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "info"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Braces, Copy, Eye, FileText, Globe, Play, RefreshCcw, Save } from '@lucide/vue';
+import { Braces, FileText, Globe, Play, RefreshCcw, Save } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCurrentTab } from '../../composables/useCurrentTab';
@@ -18,8 +18,8 @@ import Card from '../components/Card.vue';
 import ChecksSummary from '../components/ChecksSummary.vue';
 import EmptyState from '../components/EmptyState.vue';
 import IconBadge from '../components/IconBadge.vue';
-import JsonPreview from '../components/JsonPreview.vue';
 import PageHeader from '../components/PageHeader.vue';
+import ResultPreviewTabs from '../components/ResultPreviewTabs.vue';
 import SegmentedControl from '../components/SegmentedControl.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import ValidationSummary from '../components/ValidationSummary.vue';
@@ -31,12 +31,11 @@ const { recipes, loading: recipesLoading, error: recipesError, loadRecipes } = u
 const { saveRun } = useRuns();
 const { running, error: runnerError, runRecipe } = useScraperRunner();
 const { t } = useSettings();
-const { success: toastSuccess, error: toastError } = useToast();
+const { success: toastSuccess } = useToast();
 const route = useRoute();
 
 const selectedRecipeIds = ref<string[]>([]);
 const latestRuns = ref<RecipeRun[]>([]);
-const expandedRunIds = ref<Set<string>>(new Set());
 const runMode = ref<RunMode>('single');
 
 const runModeOptions = computed<Array<{ value: RunMode; label: string }>>(() => [
@@ -105,7 +104,6 @@ async function executeRecipe(): Promise<void> {
     return;
   }
 
-  expandedRunIds.value = new Set();
   latestRuns.value = [];
 
   for (const recipe of selectedRecipes.value) {
@@ -119,25 +117,6 @@ async function executeRecipe(): Promise<void> {
 async function persistRun(run: RecipeRun): Promise<void> {
   await saveRun(run);
   toastSuccess(t('home.resultSaved'));
-}
-
-async function copyRunJson(run: RecipeRun): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(JSON.stringify(run.data, null, 2));
-    toastSuccess(t('home.jsonCopied'));
-  } catch {
-    toastError(t('home.copyError'));
-  }
-}
-
-function toggleRunDetails(runId: string): void {
-  const next = new Set(expandedRunIds.value);
-  if (next.has(runId)) {
-    next.delete(runId);
-  } else {
-    next.add(runId);
-  }
-  expandedRunIds.value = next;
 }
 
 function getRunItemCount(run: RecipeRun): number | null {
@@ -278,14 +257,6 @@ function formatDuration(milliseconds: number): string {
                 <Save class="h-3.5 w-3.5" aria-hidden="true" />
                 {{ t('home.save') }}
               </Button>
-              <Button size="xs" @click="copyRunJson(run)">
-                <Copy class="h-3.5 w-3.5" aria-hidden="true" />
-                {{ t('home.copyJson') }}
-              </Button>
-              <Button size="xs" variant="ghost" @click="toggleRunDetails(run.id)">
-                <Eye class="h-3.5 w-3.5" aria-hidden="true" />
-                {{ expandedRunIds.has(run.id) ? t('home.viewData') : t('home.viewDetails') }}
-              </Button>
             </div>
           </div>
 
@@ -294,40 +265,12 @@ function formatDuration(milliseconds: number): string {
             <span>{{ formatDuration(run.durationMs) }}</span>
             <span v-if="getRunItemCount(run) !== null">{{ getRunItemCount(run) }} {{ t('home.items') }}</span>
             <ValidationSummary compact :validation="run.validation" />
+            <ChecksSummary compact :checks="run.checks" />
             <Badge v-if="run.warnings.length > 0" variant="warning">{{ run.warnings.length }} {{ t('home.warnings') }}</Badge>
             <Badge v-if="run.errors.length > 0" variant="danger">{{ run.errors.length }} {{ t('home.errors') }}</Badge>
           </div>
 
-          <ChecksSummary
-            class="mb-2"
-            :checks="run.checks"
-            :show-all-results="expandedRunIds.has(run.id)"
-            :expandable="expandedRunIds.has(run.id)"
-          />
-
-          <div v-if="expandedRunIds.has(run.id)" class="mb-2">
-            <ValidationSummary :validation="run.validation" />
-          </div>
-
-          <div v-if="expandedRunIds.has(run.id) && run.warnings.length > 0" class="mb-2 rounded-md border border-amberline-100 bg-amberline-50 px-3 py-2 dark:border-amberline-500/30 dark:bg-amberline-500/15">
-            <h3 class="text-xs font-bold text-amberline-500">{{ t('home.warnings') }}</h3>
-            <ul class="mt-1 space-y-1 text-xs text-ink-700 dark:text-ink-50">
-              <li v-for="warning in run.warnings" :key="`${warning.field}-${warning.message}`">
-                <strong>{{ warning.field }}:</strong> {{ warning.message }}
-              </li>
-            </ul>
-          </div>
-
-          <div v-if="expandedRunIds.has(run.id) && run.errors.length > 0" class="mb-2 rounded-md border border-coral-100 bg-coral-50 px-3 py-2 dark:border-coral-500/30 dark:bg-coral-500/10">
-            <h3 class="text-xs font-bold text-coral-500">{{ t('home.errors') }}</h3>
-            <ul class="mt-1 space-y-1 text-xs text-ink-700 dark:text-ink-50">
-              <li v-for="error in run.errors" :key="`${error.field ?? 'run'}-${error.message}`">
-                <strong>{{ error.field ?? t('home.runField') }}:</strong> {{ error.message }}
-              </li>
-            </ul>
-          </div>
-
-          <JsonPreview :value="expandedRunIds.has(run.id) ? run : run.data" />
+          <ResultPreviewTabs :run="run" />
         </Card>
       </template>
 
