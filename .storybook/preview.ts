@@ -14,21 +14,21 @@ if (typeof globalThis.chrome === 'undefined') {
         get: (_keys: unknown) => Promise.resolve({}),
         set: (_items: unknown) => Promise.resolve(),
         remove: (_keys: unknown) => Promise.resolve(),
-        clear: () => Promise.resolve(),
-      },
+        clear: () => Promise.resolve()
+      }
     },
     runtime: {
       sendMessage: () => Promise.resolve(),
       onMessage: {
         addListener: () => {},
-        removeListener: () => {},
-      },
+        removeListener: () => {}
+      }
     },
     tabs: {
       query: () => Promise.resolve([]),
       create: () => Promise.resolve({}),
-      update: () => Promise.resolve({}),
-    },
+      update: () => Promise.resolve({})
+    }
   };
 }
 
@@ -43,22 +43,22 @@ const preview: Preview = {
         icon: 'moon',
         items: [
           { value: false, title: 'Light', icon: 'sun' },
-          { value: true, title: 'Dark', icon: 'moon' },
+          { value: true, title: 'Dark', icon: 'moon' }
         ],
-        dynamicTitle: true,
-      },
-    },
+        dynamicTitle: true
+      }
+    }
   },
 
   decorators: [
     (story, context) => {
       // Sync Tailwind dark-mode class with the global toggle.
-      const isDark = Boolean(context.globals['darkMode']);
+      const isDark = Boolean(context.globals.darkMode);
       document.documentElement.classList.toggle('dark', isDark);
       document.body.style.background = isDark ? '#202124' : '#F8F9FA';
       document.body.style.color = isDark ? '#F8F9FA' : '#202124';
       return story();
-    },
+    }
   ],
 
   parameters: {
@@ -68,10 +68,10 @@ const preview: Preview = {
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/i,
-      },
-    },
-  },
+        date: /Date$/i
+      }
+    }
+  }
 };
 
 export default preview;

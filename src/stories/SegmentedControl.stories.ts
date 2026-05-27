@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { ref } from 'vue';
 import type { DefineComponent } from 'vue';
+import { ref } from 'vue';
 import SegmentedControl from '../sidepanel/components/SegmentedControl.vue';
 
 const meta = {
@@ -8,7 +8,7 @@ const meta = {
   // Cast needed: vue-tsc can't infer Meta<> for generic components.
   component: SegmentedControl as unknown as DefineComponent,
   tags: ['autodocs'],
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta;
 
 export default meta;
@@ -21,12 +21,12 @@ export const TwoOptions: Story = {
       const active = ref('readable');
       const options = [
         { value: 'readable', label: 'Readable' },
-        { value: 'json', label: 'JSON' },
+        { value: 'json', label: 'JSON' }
       ];
       return { active, options };
     },
-    template: `<SegmentedControl v-model="active" :options="options" />`,
-  }),
+    template: `<SegmentedControl v-model="active" :options="options" />`
+  })
 };
 
 export const ThreeOptions: Story = {
@@ -37,12 +37,12 @@ export const ThreeOptions: Story = {
       const options = [
         { value: 'readable', label: 'Readable' },
         { value: 'json', label: 'JSON' },
-        { value: 'checks', label: 'Checks' },
+        { value: 'checks', label: 'Checks' }
       ];
       return { active, options };
     },
-    template: `<SegmentedControl v-model="active" :options="options" />`,
-  }),
+    template: `<SegmentedControl v-model="active" :options="options" />`
+  })
 };
 
 export const FourOptions: Story = {
@@ -54,10 +54,10 @@ export const FourOptions: Story = {
         { value: 'all', label: 'All' },
         { value: 'passed', label: 'Passed' },
         { value: 'warnings', label: 'Warnings' },
-        { value: 'errors', label: 'Errors' },
+        { value: 'errors', label: 'Errors' }
       ];
       return { active, options };
     },
-    template: `<SegmentedControl v-model="active" :options="options" />`,
-  }),
+    template: `<SegmentedControl v-model="active" :options="options" />`
+  })
 };

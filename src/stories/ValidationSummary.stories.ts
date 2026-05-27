@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import ValidationSummary from '../sidepanel/components/ValidationSummary.vue';
 import type { OutputValidationResult } from '../shared/types';
+import ValidationSummary from '../sidepanel/components/ValidationSummary.vue';
 
 const passed: OutputValidationResult = {
   status: 'valid',
-  issues: [],
+  issues: []
 };
 
 const failed: OutputValidationResult = {
@@ -13,13 +13,13 @@ const failed: OutputValidationResult = {
     { path: 'images[1].alt', message: 'Expected string, received null', keyword: 'type' },
     { path: 'images[3].alt', message: 'Expected string, received null', keyword: 'type' },
     { path: 'images[4].width', message: 'Expected string, received null', keyword: 'type' },
-    { path: 'images[4].height', message: 'Expected string, received null', keyword: 'type' },
-  ],
+    { path: 'images[4].height', message: 'Expected string, received null', keyword: 'type' }
+  ]
 };
 
 const skipped: OutputValidationResult = {
   status: 'skipped',
-  issues: [],
+  issues: []
 };
 
 const meta = {
@@ -27,9 +27,9 @@ const meta = {
   component: ValidationSummary,
   tags: ['autodocs'],
   argTypes: {
-    compact: { control: 'boolean' },
+    compact: { control: 'boolean' }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof ValidationSummary>;
 
 export default meta;
@@ -59,10 +59,10 @@ export const AllStatuses: Story = {
           <ValidationSummary :validation="skipped" />
         </div>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const CompactInvalid: Story = {
-  args: { validation: failed, compact: true },
+  args: { validation: failed, compact: true }
 };

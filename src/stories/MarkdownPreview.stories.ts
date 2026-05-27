@@ -16,9 +16,9 @@ const meta = {
   component: MarkdownPreview,
   tags: ['autodocs'],
   argTypes: {
-    markdown: { control: 'text' },
+    markdown: { control: 'text' }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof MarkdownPreview>;
 
 export default meta;
@@ -41,9 +41,9 @@ export const FlatMetadata: Story = {
       language: 'en',
       author: null,
       generator: null,
-      themeColor: '#FA4529',
-    }),
-  },
+      themeColor: '#FA4529'
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -65,10 +65,10 @@ export const ArrayOfObjects: Story = {
         { level: 'H3', text: 'Example page' },
         { level: 'H2', text: 'Technical summary' },
         { level: 'H2', text: 'Browser compatibility' },
-        { level: 'H2', text: 'See also' },
-      ],
-    }),
-  },
+        { level: 'H2', text: 'See also' }
+      ]
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -85,11 +85,14 @@ export const ArrayWithUrls: Story = {
         { text: 'ask', href: 'https://news.ycombinator.com/ask' },
         { text: 'show', href: 'https://news.ycombinator.com/show' },
         { text: 'jobs', href: 'https://news.ycombinator.com/jobs' },
-        { text: 'TypeScript 6 brings major performance improvements', href: 'https://devblogs.microsoft.com/typescript/typescript-6/' },
-        { text: '', href: 'https://news.ycombinator.com/user?id=pg' },
-      ],
-    }),
-  },
+        {
+          text: 'TypeScript 6 brings major performance improvements',
+          href: 'https://devblogs.microsoft.com/typescript/typescript-6/'
+        },
+        { text: '', href: 'https://news.ycombinator.com/user?id=pg' }
+      ]
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -101,14 +104,29 @@ export const ArrayWithNulls: Story = {
     markdown: md({
       imageCount: 5,
       images: [
-        { src: 'https://images.unsplash.com/photo-1?w=800', alt: 'Aerial view of mountain range at sunrise', width: '800', height: '534' },
+        {
+          src: 'https://images.unsplash.com/photo-1?w=800',
+          alt: 'Aerial view of mountain range at sunrise',
+          width: '800',
+          height: '534'
+        },
         { src: 'https://images.unsplash.com/photo-2?w=800', alt: '', width: null, height: null },
-        { src: 'https://images.unsplash.com/photo-3?w=800', alt: 'Close-up of colorful wildflowers in a meadow', width: '800', height: '600' },
+        {
+          src: 'https://images.unsplash.com/photo-3?w=800',
+          alt: 'Close-up of colorful wildflowers in a meadow',
+          width: '800',
+          height: '600'
+        },
         { src: 'https://images.unsplash.com/photo-4?w=800', alt: '', width: '800', height: '534' },
-        { src: 'https://images.unsplash.com/photo-5?w=800', alt: 'Urban skyline at dusk with city lights', width: null, height: null },
-      ],
-    }),
-  },
+        {
+          src: 'https://images.unsplash.com/photo-5?w=800',
+          alt: 'Urban skyline at dusk with city lights',
+          width: null,
+          height: null
+        }
+      ]
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -128,8 +146,8 @@ export const NestedObjects: Story = {
           publisher: {
             '@type': 'Organization',
             name: 'Schema.org',
-            logo: { '@type': 'ImageObject', url: 'https://schema.org/logo.png' },
-          },
+            logo: { '@type': 'ImageObject', url: 'https://schema.org/logo.png' }
+          }
         },
         {
           '@context': 'https://schema.org',
@@ -137,12 +155,12 @@ export const NestedObjects: Story = {
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://schema.org' },
             { '@type': 'ListItem', position: 2, name: 'Schemas', item: 'https://schema.org/docs/schemas.html' },
-            { '@type': 'ListItem', position: 3, name: 'Event', item: 'https://schema.org/Event' },
-          ],
-        },
-      ],
-    }),
-  },
+            { '@type': 'ListItem', position: 3, name: 'Event', item: 'https://schema.org/Event' }
+          ]
+        }
+      ]
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -161,9 +179,9 @@ export const MixedFlatAndArray: Story = {
       ogDescription: null,
       ogImage: null,
       twitterCard: 'summary_large_image',
-      structuredDataCount: 2,
-    }),
-  },
+      structuredDataCount: 2
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -176,9 +194,9 @@ export const LongTextField: Story = {
       title: 'Article Title',
       author: 'Jane Smith',
       publishedAt: '2026-05-26',
-      body: `TypeScript 6 has been officially released, bringing major improvements to build performance and type inference. The new compiler architecture reduces cold-build times by up to 60% on large monorepos.\n\nThe release includes several long-awaited features:\n- Improved inference for generic callbacks\n- Stricter null handling in optional chaining\n- Native support for decorators (stage 3)\n- A new --isolatedDeclarations flag for incremental builds\n\nMigrating from TypeScript 5.x is straightforward. Most projects will only need to update their tsconfig and run tsc --noEmit to catch any new type errors introduced by the stricter inference rules.`,
-    }),
-  },
+      body: `TypeScript 6 has been officially released, bringing major improvements to build performance and type inference. The new compiler architecture reduces cold-build times by up to 60% on large monorepos.\n\nThe release includes several long-awaited features:\n- Improved inference for generic callbacks\n- Stricter null handling in optional chaining\n- Native support for decorators (stage 3)\n- A new --isolatedDeclarations flag for incremental builds\n\nMigrating from TypeScript 5.x is straightforward. Most projects will only need to update their tsconfig and run tsc --noEmit to catch any new type errors introduced by the stricter inference rules.`
+    })
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -186,10 +204,10 @@ export const LongTextField: Story = {
 // ---------------------------------------------------------------------------
 export const EmptyData: Story = {
   name: 'Empty data',
-  args: { markdown: md({}) },
+  args: { markdown: md({}) }
 };
 
 export const PrimitiveString: Story = {
   name: 'Primitive string',
-  args: { markdown: md('Hello, world!') },
+  args: { markdown: md('Hello, world!') }
 };

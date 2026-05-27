@@ -7,9 +7,9 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     compact: { control: 'boolean' },
-    tone: { control: 'radio', options: ['light', 'dark'] },
+    tone: { control: 'radio', options: ['light', 'dark'] }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof JsonPreview>;
 
 export default meta;
@@ -24,9 +24,9 @@ export const FlatObject: Story = {
       robots: 'index, follow',
       viewport: 'width=device-width, initial-scale=1',
       charset: 'UTF-8',
-      language: 'en',
-    },
-  },
+      language: 'en'
+    }
+  }
 };
 
 export const ArrayOfObjects: Story = {
@@ -41,10 +41,10 @@ export const ArrayOfObjects: Story = {
         { level: 'H2', text: 'Examples' },
         { level: 'H3', text: 'All headings' },
         { level: 'H2', text: 'Technical summary' },
-        { level: 'H2', text: 'Browser compatibility' },
-      ],
-    },
-  },
+        { level: 'H2', text: 'Browser compatibility' }
+      ]
+    }
+  }
 };
 
 export const NestedStructure: Story = {
@@ -58,10 +58,10 @@ export const NestedStructure: Story = {
       publisher: {
         '@type': 'Organization',
         name: 'Schema.org',
-        logo: { '@type': 'ImageObject', url: 'https://schema.org/logo.png' },
-      },
-    },
-  },
+        logo: { '@type': 'ImageObject', url: 'https://schema.org/logo.png' }
+      }
+    }
+  }
 };
 
 export const MixedNullsAndValues: Story = {
@@ -72,10 +72,10 @@ export const MixedNullsAndValues: Story = {
         { src: 'https://images.unsplash.com/photo-1?w=800', alt: 'Mountain sunrise', width: '800', height: '534' },
         { src: 'https://images.unsplash.com/photo-2?w=800', alt: '', width: null, height: null },
         { src: 'https://images.unsplash.com/photo-3?w=800', alt: 'Wildflowers', width: '800', height: '600' },
-        { src: 'https://images.unsplash.com/photo-4?w=800', alt: '', width: '800', height: '534' },
-      ],
-    },
-  },
+        { src: 'https://images.unsplash.com/photo-4?w=800', alt: '', width: '800', height: '534' }
+      ]
+    }
+  }
 };
 
 export const EmptyObject: Story = { args: { value: {} } };
@@ -87,7 +87,7 @@ export const Compact: Story = {
     value: {
       title: 'Compact preview',
       description: 'This preview uses less vertical space.',
-      canonical: 'https://example.com',
-    },
-  },
+      canonical: 'https://example.com'
+    }
+  }
 };

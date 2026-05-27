@@ -9,11 +9,11 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'primary', 'info', 'success', 'warning', 'danger', 'accent', 'category', 'dark'],
+      options: ['neutral', 'primary', 'info', 'success', 'warning', 'danger', 'accent', 'category', 'dark']
     },
-    size: { control: 'radio', options: ['xs', 'sm'] },
+    size: { control: 'radio', options: ['xs', 'sm'] }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof Badge>;
 
 export default meta;
@@ -24,8 +24,8 @@ export const Default: Story = {
   render: (args: Record<string, unknown>) => ({
     components: { Badge },
     setup: () => ({ args }),
-    template: `<Badge v-bind="args">{{ args.default }}</Badge>`,
-  }),
+    template: `<Badge v-bind="args">{{ args.default }}</Badge>`
+  })
 };
 
 export const AllVariants: Story = {
@@ -43,8 +43,8 @@ export const AllVariants: Story = {
         <Badge variant="category">Category</Badge>
         <Badge variant="dark">Dark</Badge>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const BothSizes: Story = {
@@ -57,6 +57,6 @@ export const BothSizes: Story = {
         <Badge variant="warning" size="xs">xs — Warning</Badge>
         <Badge variant="warning" size="sm">sm — Warning</Badge>
       </div>
-    `,
-  }),
+    `
+  })
 };

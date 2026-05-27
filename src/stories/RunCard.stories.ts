@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import RunCard from '../sidepanel/components/RunCard.vue';
 import {
-  runHeadingsOutline,
-  runPageMetadata,
-  runImageSeoQa,
-  runPageLinks,
-  runJsonLd,
-  runSeoSnapshot,
   runError,
+  runHeadingsOutline,
+  runImageSeoQa,
+  runJsonLd,
+  runPageLinks,
+  runPageMetadata,
+  runSeoSnapshot
 } from './fixtures';
 
 const meta = {
@@ -16,51 +16,51 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     deleteDisabled: { control: 'boolean' },
-    batchName: { control: 'text' },
+    batchName: { control: 'text' }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof RunCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const SuccessRun: Story = {
-  args: { run: runHeadingsOutline },
+  args: { run: runHeadingsOutline }
 };
 
 export const MetadataRun: Story = {
   name: 'Success — Flat key-value (Page Metadata)',
-  args: { run: runPageMetadata },
+  args: { run: runPageMetadata }
 };
 
 export const PartialWithWarnings: Story = {
   name: 'Partial — Image SEO QA with warnings',
-  args: { run: runImageSeoQa },
+  args: { run: runImageSeoQa }
 };
 
 export const WithLinks: Story = {
   name: 'Success — Array of links',
-  args: { run: runPageLinks },
+  args: { run: runPageLinks }
 };
 
 export const WithJsonLd: Story = {
   name: 'Success — Nested JSON-LD',
-  args: { run: runJsonLd },
+  args: { run: runJsonLd }
 };
 
 export const SeoSnapshot: Story = {
   name: 'Success — SEO Snapshot',
-  args: { run: runSeoSnapshot },
+  args: { run: runSeoSnapshot }
 };
 
 export const ErrorRun: Story = {
   name: 'Error run',
-  args: { run: runError },
+  args: { run: runError }
 };
 
 export const WithBatchName: Story = {
   name: 'With batch name badge',
-  args: { run: runHeadingsOutline, batchName: 'Docs audit 2026' },
+  args: { run: runHeadingsOutline, batchName: 'Docs audit 2026' }
 };
 
 export const AllRuns: Story = {
@@ -68,7 +68,15 @@ export const AllRuns: Story = {
   args: { run: runHeadingsOutline },
   render: () => ({
     components: { RunCard },
-    setup: () => ({ runHeadingsOutline, runPageMetadata, runImageSeoQa, runPageLinks, runJsonLd, runSeoSnapshot, runError }),
+    setup: () => ({
+      runHeadingsOutline,
+      runPageMetadata,
+      runImageSeoQa,
+      runPageLinks,
+      runJsonLd,
+      runSeoSnapshot,
+      runError
+    }),
     template: `
       <div class="flex flex-col gap-2">
         <RunCard :run="runHeadingsOutline" />
@@ -79,6 +87,6 @@ export const AllRuns: Story = {
         <RunCard :run="runSeoSnapshot" />
         <RunCard :run="runError" />
       </div>
-    `,
-  }),
+    `
+  })
 };

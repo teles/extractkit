@@ -1,20 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import ResultPreviewTabs from '../sidepanel/components/ResultPreviewTabs.vue';
 import {
-  runHeadingsOutline,
-  runPageMetadata,
-  runImageSeoQa,
-  runPageLinks,
-  runJsonLd,
-  runSeoSnapshot,
   runError,
+  runHeadingsOutline,
+  runImageSeoQa,
+  runJsonLd,
+  runPageLinks,
+  runPageMetadata,
+  runSeoSnapshot
 } from './fixtures';
 
 const meta = {
   title: 'Results/ResultPreviewTabs',
   component: ResultPreviewTabs,
   tags: ['autodocs'],
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof ResultPreviewTabs>;
 
 export default meta;
@@ -26,37 +26,37 @@ type Story = StoryObj<typeof meta>;
 
 export const HeadingsOutline: Story = {
   name: 'Headings Outline — array of objects',
-  args: { run: runHeadingsOutline },
+  args: { run: runHeadingsOutline }
 };
 
 export const PageMetadata: Story = {
   name: 'Page Metadata — flat key-value',
-  args: { run: runPageMetadata },
+  args: { run: runPageMetadata }
 };
 
 export const ImageSeoQa: Story = {
   name: 'Image SEO QA — partial with warnings + checks',
-  args: { run: runImageSeoQa },
+  args: { run: runImageSeoQa }
 };
 
 export const PageLinks: Story = {
   name: 'Page Links — array with empty text values',
-  args: { run: runPageLinks },
+  args: { run: runPageLinks }
 };
 
 export const JsonLdStructuredData: Story = {
   name: 'JSON-LD Structured Data — deeply nested',
-  args: { run: runJsonLd },
+  args: { run: runJsonLd }
 };
 
 export const SeoSnapshot: Story = {
   name: 'SEO Snapshot — mixed flat + check results',
-  args: { run: runSeoSnapshot },
+  args: { run: runSeoSnapshot }
 };
 
 export const ErrorState: Story = {
   name: 'Error run — no data',
-  args: { run: runError },
+  args: { run: runError }
 };
 
 // ---------------------------------------------------------------------------
@@ -69,15 +69,7 @@ export const AllRunTypes: Story = {
   render: () => ({
     components: { ResultPreviewTabs },
     setup: () => ({
-      runs: [
-        runHeadingsOutline,
-        runPageMetadata,
-        runImageSeoQa,
-        runPageLinks,
-        runJsonLd,
-        runSeoSnapshot,
-        runError,
-      ],
+      runs: [runHeadingsOutline, runPageMetadata, runImageSeoQa, runPageLinks, runJsonLd, runSeoSnapshot, runError]
     }),
     template: `
       <div class="grid grid-cols-1 gap-8">
@@ -86,6 +78,6 @@ export const AllRunTypes: Story = {
           <ResultPreviewTabs :run="run" />
         </div>
       </div>
-    `,
-  }),
+    `
+  })
 };

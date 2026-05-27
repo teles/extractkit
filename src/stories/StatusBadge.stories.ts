@@ -6,9 +6,9 @@ const meta = {
   component: StatusBadge,
   tags: ['autodocs'],
   argTypes: {
-    status: { control: 'radio', options: ['success', 'partial', 'error'] },
+    status: { control: 'radio', options: ['success', 'partial', 'error'] }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof StatusBadge>;
 
 export default meta;
@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Success: Story = { args: { status: 'success' } };
 export const Partial: Story = { args: { status: 'partial' } };
-export const Error: Story = { args: { status: 'error' } };
+export const ErrorStatus: Story = { args: { status: 'error' } };
 
 export const AllStatuses: Story = {
   args: { status: 'success' },
@@ -28,6 +28,6 @@ export const AllStatuses: Story = {
         <StatusBadge status="partial" />
         <StatusBadge status="error" />
       </div>
-    `,
-  }),
+    `
+  })
 };

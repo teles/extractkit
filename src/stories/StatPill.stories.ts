@@ -7,9 +7,9 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     label: { control: 'text' },
-    value: { control: 'number' },
+    value: { control: 'number' }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof StatPill>;
 
 export default meta;
@@ -29,6 +29,6 @@ export const RunSummary: Story = {
         <StatPill label="Warnings" :value="14" />
         <StatPill label="Errors" :value="5" />
       </div>
-    `,
-  }),
+    `
+  })
 };

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
 import { Search } from '@lucide/vue';
+import type { Meta, StoryObj } from '@storybook/vue3';
 import Button from '../sidepanel/components/Button.vue';
 
 const meta = {
@@ -9,12 +9,12 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger'],
+      options: ['primary', 'secondary', 'ghost', 'danger']
     },
     size: { control: 'radio', options: ['xs', 'sm'] },
-    block: { control: 'boolean' },
+    block: { control: 'boolean' }
   },
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'padded' }
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -30,8 +30,8 @@ export const AllVariants: Story = {
         <Button variant="ghost">Ghost</Button>
         <Button variant="danger">Danger</Button>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const BothSizes: Story = {
@@ -44,8 +44,8 @@ export const BothSizes: Story = {
         <Button variant="primary" size="xs">xs primary</Button>
         <Button variant="primary" size="sm">sm primary</Button>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const WithIcon: Story = {
@@ -62,8 +62,8 @@ export const WithIcon: Story = {
           Search
         </Button>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const Disabled: Story = {
@@ -76,8 +76,8 @@ export const Disabled: Story = {
         <Button disabled variant="ghost">Ghost</Button>
         <Button disabled variant="danger">Danger</Button>
       </div>
-    `,
-  }),
+    `
+  })
 };
 
 export const BlockLayout: Story = {
@@ -88,6 +88,6 @@ export const BlockLayout: Story = {
         <Button block variant="primary">Block primary</Button>
         <Button block variant="secondary">Block secondary</Button>
       </div>
-    `,
-  }),
+    `
+  })
 };

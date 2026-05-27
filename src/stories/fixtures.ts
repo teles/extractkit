@@ -1,8 +1,4 @@
-import type {
-  OutputValidationResult,
-  RecipeChecksResult,
-  RecipeRun,
-} from '../shared/types';
+import type { OutputValidationResult, RecipeChecksResult, RecipeRun } from '../shared/types';
 
 // ---------------------------------------------------------------------------
 // Shared building blocks
@@ -14,7 +10,7 @@ const noChecks: RecipeChecksResult = {
   warnings: 0,
   errors: 0,
   skipped: 0,
-  results: [],
+  results: []
 };
 
 const checksAllPassed: RecipeChecksResult = {
@@ -32,7 +28,7 @@ const checksAllPassed: RecipeChecksResult = {
       selector: 'h1',
       assertion: { type: 'countEquals', value: 1 },
       actual: 1,
-      expected: '1',
+      expected: '1'
     },
     {
       id: 'chk-2',
@@ -42,7 +38,7 @@ const checksAllPassed: RecipeChecksResult = {
       selector: 'h2',
       assertion: { type: 'countGreaterThan', value: 0 },
       actual: 5,
-      expected: '> 0',
+      expected: '> 0'
     },
     {
       id: 'chk-3',
@@ -50,9 +46,9 @@ const checksAllPassed: RecipeChecksResult = {
       status: 'passed',
       severity: 'warning',
       selector: 'h1, h2, h3',
-      assertion: { type: 'eachElementMustHave', selector: ':scope' },
-    },
-  ],
+      assertion: { type: 'eachElementMustHave', selector: ':scope' }
+    }
+  ]
 };
 
 const checksWithWarnings: RecipeChecksResult = {
@@ -71,7 +67,7 @@ const checksWithWarnings: RecipeChecksResult = {
       assertion: { type: 'emptyAttributeCountEquals', attribute: 'alt', value: 0 },
       actual: 4,
       expected: '0',
-      message: '4 images are missing alt attributes',
+      message: '4 images are missing alt attributes'
     },
     {
       id: 'chk-2',
@@ -81,7 +77,7 @@ const checksWithWarnings: RecipeChecksResult = {
       selector: 'img',
       assertion: { type: 'countGreaterThan', value: 0 },
       actual: 12,
-      expected: '> 0',
+      expected: '> 0'
     },
     {
       id: 'chk-3',
@@ -89,9 +85,9 @@ const checksWithWarnings: RecipeChecksResult = {
       status: 'passed',
       severity: 'info',
       selector: 'img',
-      assertion: { type: 'eachElementShouldHave', selector: '[width][height]' },
-    },
-  ],
+      assertion: { type: 'eachElementShouldHave', selector: '[width][height]' }
+    }
+  ]
 };
 
 const checksWithErrors: RecipeChecksResult = {
@@ -110,7 +106,7 @@ const checksWithErrors: RecipeChecksResult = {
       assertion: { type: 'countEquals', value: 1 },
       actual: 0,
       expected: '1',
-      message: 'Expected exactly 1 but found 0',
+      message: 'Expected exactly 1 but found 0'
     },
     {
       id: 'chk-2',
@@ -119,7 +115,7 @@ const checksWithErrors: RecipeChecksResult = {
       severity: 'error',
       selector: 'link[rel="canonical"]',
       assertion: { type: 'exists' },
-      message: 'No canonical link found',
+      message: 'No canonical link found'
     },
     {
       id: 'chk-3',
@@ -128,7 +124,7 @@ const checksWithErrors: RecipeChecksResult = {
       severity: 'warning',
       selector: 'meta[name="description"]',
       assertion: { type: 'exists' },
-      message: 'Meta description is missing',
+      message: 'Meta description is missing'
     },
     {
       id: 'chk-4',
@@ -138,14 +134,14 @@ const checksWithErrors: RecipeChecksResult = {
       selector: 'a[href]',
       assertion: { type: 'countGreaterThan', value: 0 },
       actual: 42,
-      expected: '> 0',
-    },
-  ],
+      expected: '> 0'
+    }
+  ]
 };
 
 const validationPassed: OutputValidationResult = {
   status: 'valid',
-  issues: [],
+  issues: []
 };
 
 const validationFailed: OutputValidationResult = {
@@ -155,15 +151,15 @@ const validationFailed: OutputValidationResult = {
     {
       path: '/ogImage',
       message: 'must match format "uri"',
-      keyword: 'format',
+      keyword: 'format'
     },
-    { path: '/canonical', message: 'must not be null', keyword: 'not' },
-  ],
+    { path: '/canonical', message: 'must not be null', keyword: 'not' }
+  ]
 };
 
 const validationSkipped: OutputValidationResult = {
   status: 'skipped',
-  issues: [],
+  issues: []
 };
 
 // ---------------------------------------------------------------------------
@@ -196,13 +192,13 @@ export const runHeadingsOutline: RecipeRun = {
       { level: 'H2', text: 'Technical summary' },
       { level: 'H2', text: 'Specifications' },
       { level: 'H2', text: 'Browser compatibility' },
-      { level: 'H2', text: 'See also' },
-    ],
+      { level: 'H2', text: 'See also' }
+    ]
   },
   checks: checksAllPassed,
   validation: validationPassed,
   warnings: [],
-  errors: [],
+  errors: []
 };
 
 export const runPageMetadata: RecipeRun = {
@@ -227,12 +223,12 @@ export const runPageMetadata: RecipeRun = {
     language: 'en',
     author: null,
     generator: null,
-    themeColor: '#FA4529',
+    themeColor: '#FA4529'
   },
   checks: noChecks,
   validation: validationPassed,
   warnings: [],
-  errors: [],
+  errors: []
 };
 
 export const runImageSeoQa: RecipeRun = {
@@ -253,33 +249,33 @@ export const runImageSeoQa: RecipeRun = {
         src: 'https://images.unsplash.com/photo-1748123456789?w=800',
         alt: 'Aerial view of mountain range at sunrise',
         width: '800',
-        height: '534',
+        height: '534'
       },
       {
         src: 'https://images.unsplash.com/photo-1748234567890?w=800',
         alt: '',
         width: null,
-        height: null,
+        height: null
       },
       {
         src: 'https://images.unsplash.com/photo-1748345678901?w=800',
         alt: 'Close-up of colorful wildflowers in a meadow',
         width: '800',
-        height: '600',
+        height: '600'
       },
       {
         src: 'https://images.unsplash.com/photo-1748456789012?w=800',
         alt: '',
         width: '800',
-        height: '534',
+        height: '534'
       },
       {
         src: 'https://images.unsplash.com/photo-1748567890123?w=800',
         alt: 'Urban skyline at dusk with city lights',
         width: null,
-        height: null,
-      },
-    ],
+        height: null
+      }
+    ]
   },
   checks: checksWithWarnings,
   validation: validationSkipped,
@@ -287,9 +283,9 @@ export const runImageSeoQa: RecipeRun = {
     { field: 'images[1].alt', message: 'Alt text is empty' },
     { field: 'images[3].alt', message: 'Alt text is empty' },
     { field: 'images[1].width', message: 'Width attribute is missing' },
-    { field: 'images[1].height', message: 'Height attribute is missing' },
+    { field: 'images[1].height', message: 'Height attribute is missing' }
   ],
-  errors: [],
+  errors: []
 };
 
 export const runPageLinks: RecipeRun = {
@@ -315,27 +311,27 @@ export const runPageLinks: RecipeRun = {
       { text: 'submit', href: 'https://news.ycombinator.com/submit' },
       {
         text: 'TypeScript 6 brings major performance improvements',
-        href: 'https://devblogs.microsoft.com/typescript/typescript-6/',
+        href: 'https://devblogs.microsoft.com/typescript/typescript-6/'
       },
       {
         text: '247 points',
-        href: 'https://news.ycombinator.com/item?id=44123456',
+        href: 'https://news.ycombinator.com/item?id=44123456'
       },
       {
         text: 'Why we rebuilt our CLI from scratch using Rust',
-        href: 'https://blog.example.com/rust-cli',
+        href: 'https://blog.example.com/rust-cli'
       },
       {
         text: '189 points',
-        href: 'https://news.ycombinator.com/item?id=44123457',
+        href: 'https://news.ycombinator.com/item?id=44123457'
       },
-      { text: '', href: 'https://news.ycombinator.com/user?id=pg' },
-    ],
+      { text: '', href: 'https://news.ycombinator.com/user?id=pg' }
+    ]
   },
   checks: noChecks,
   validation: validationSkipped,
   warnings: [{ field: 'links[12].text', message: 'Link text is empty' }],
-  errors: [],
+  errors: []
 };
 
 export const runJsonLd: RecipeRun = {
@@ -362,10 +358,10 @@ export const runJsonLd: RecipeRun = {
           name: 'Schema.org',
           logo: {
             '@type': 'ImageObject',
-            url: 'https://schema.org/logo.png',
-          },
+            url: 'https://schema.org/logo.png'
+          }
         },
-        mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://schema.org/Event' },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://schema.org/Event' }
       },
       {
         '@context': 'https://schema.org',
@@ -373,15 +369,15 @@ export const runJsonLd: RecipeRun = {
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://schema.org' },
           { '@type': 'ListItem', position: 2, name: 'Schemas', item: 'https://schema.org/docs/schemas.html' },
-          { '@type': 'ListItem', position: 3, name: 'Event', item: 'https://schema.org/Event' },
-        ],
-      },
-    ],
+          { '@type': 'ListItem', position: 3, name: 'Event', item: 'https://schema.org/Event' }
+        ]
+      }
+    ]
   },
   checks: noChecks,
   validation: validationSkipped,
   warnings: [],
-  errors: [],
+  errors: []
 };
 
 export const runSeoSnapshot: RecipeRun = {
@@ -406,15 +402,15 @@ export const runSeoSnapshot: RecipeRun = {
     ogImage: null,
     twitterCard: 'summary_large_image',
     twitterTitle: 'Stripe Pricing',
-    structuredDataCount: 2,
+    structuredDataCount: 2
   },
   checks: checksWithErrors,
   validation: validationFailed,
   warnings: [],
   errors: [
     { field: 'ogImage', message: 'OG image is missing' },
-    { field: 'ogDescription', message: 'OG description is missing' },
-  ],
+    { field: 'ogDescription', message: 'OG description is missing' }
+  ]
 };
 
 export const runError: RecipeRun = {
@@ -434,8 +430,8 @@ export const runError: RecipeRun = {
   warnings: [],
   errors: [
     { message: 'Page navigation timed out after 12 seconds' },
-    { field: 'title', message: 'Selector not found: title' },
-  ],
+    { field: 'title', message: 'Selector not found: title' }
+  ]
 };
 
 // Convenience groupings
@@ -446,18 +442,18 @@ export const allRuns = [
   runPageLinks,
   runJsonLd,
   runSeoSnapshot,
-  runError,
+  runError
 ] as const;
 
 export const checksFixtures = {
   noChecks,
   allPassed: checksAllPassed,
   withWarnings: checksWithWarnings,
-  withErrors: checksWithErrors,
+  withErrors: checksWithErrors
 } as const;
 
 export const validationFixtures = {
   passed: validationPassed,
   failed: validationFailed,
-  skipped: validationSkipped,
+  skipped: validationSkipped
 } as const;

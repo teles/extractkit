@@ -22,7 +22,7 @@ const storageMock = (() => {
       for (const k in store) delete store[k];
       cb?.();
     },
-    onChanged: { addListener: () => {}, removeListener: () => {} },
+    onChanged: { addListener: () => {}, removeListener: () => {} }
   };
 })();
 
@@ -32,9 +32,9 @@ Object.defineProperty(globalThis, 'chrome', {
     runtime: {
       lastError: undefined,
       sendMessage: () => {},
-      onMessage: { addListener: () => {}, removeListener: () => {} },
+      onMessage: { addListener: () => {}, removeListener: () => {} }
     },
-    tabs: { query: (_q: unknown, cb: (tabs: unknown[]) => void) => cb([]) },
+    tabs: { query: (_q: unknown, cb: (tabs: unknown[]) => void) => cb([]) }
   },
-  writable: true,
+  writable: true
 });
