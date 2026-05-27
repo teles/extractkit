@@ -1,7 +1,16 @@
-import type { BatchRunResponse, CurrentTabResponse, PanelMessage, RunRecipeResponse } from '../shared/messaging';
+import type {
+  BatchRunResponse,
+  CurrentTabResponse,
+  MessageResponse,
+  PanelMessage,
+  RunRecipeResponse,
+  UrlDiscoveryResponse
+} from '../shared/messaging';
 import {
+  CONTENT_DISCOVER_URLS,
   CONTENT_RUN_RECIPE,
   isPanelMessage,
+  MESSAGE_DISCOVER_URLS,
   MESSAGE_GET_CURRENT_TAB,
   MESSAGE_PAUSE_BATCH_RUN,
   MESSAGE_RESUME_BATCH_RUN,
@@ -10,10 +19,11 @@ import {
   MESSAGE_STOP_BATCH_RUN,
   MESSAGE_VIEW_BATCH_TAB
 } from '../shared/messaging';
-import type { CurrentTabInfo, ScrapeResult } from '../shared/types';
+import type { CurrentTabInfo, RawDiscoveredLink, ScrapeResult } from '../shared/types';
+import { createUrlDiscoveryResult, isDiscoverableSourceUrl } from '../shared/url-discovery';
 import { pauseBatchRun, resumeBatchRun, startBatchRun, stopBatchRun, viewBatchTab } from './batch-runner';
 
-type RuntimeResponse = CurrentTabResponse | RunRecipeResponse | BatchRunResponse;
+type RuntimeResponse = CurrentTabResponse | RunRecipeResponse | BatchRunResponse | UrlDiscoveryResponse;
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
@@ -68,9 +78,9 @@ function executeContentScript(tabId: number): Promise<void> {
   });
 }
 
-function sendContentMessage(tabId: number, message: unknown): Promise<RunRecipeResponse> {
+function sendContentMessage<T>(tabId: number, message: unknown): Promise<MessageResponse<T>> {
   return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, message, (response: RunRecipeResponse | undefined) => {
+    chrome.tabs.sendMessage(tabId, message, (response: MessageResponse<T> | undefined) => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
@@ -126,7 +136,7 @@ async function runRecipeInCurrentTab(
   }
 
   await executeContentScript(tab.id);
-  const response = await sendContentMessage(tab.id, {
+  const response = await sendContentMessage<ScrapeResult>(tab.id, {
     type: CONTENT_RUN_RECIPE,
     recipe: message.recipe
   });
@@ -147,6 +157,39 @@ async function runRecipeInCurrentTab(
   };
 }
 
+async function discoverUrlsInCurrentTab(
+  message: Extract<PanelMessage, { type: typeof MESSAGE_DISCOVER_URLS }>
+): Promise<UrlDiscoveryResponse> {
+  const tab = await queryActiveTab();
+  if (!tab?.id) {
+    return {
+      ok: false,
+      error: 'No active tab found.'
+    };
+  }
+
+  if (!isDiscoverableSourceUrl(tab.url)) {
+    return {
+      ok: false,
+      error: 'Unsupported URL.'
+    };
+  }
+
+  await executeContentScript(tab.id);
+  const response = await sendContentMessage<RawDiscoveredLink[]>(tab.id, {
+    type: CONTENT_DISCOVER_URLS
+  });
+
+  if (!response.ok) {
+    return response;
+  }
+
+  return {
+    ok: true,
+    data: createUrlDiscoveryResult(response.data, { url: tab.url, title: tab.title }, message.options)
+  };
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
 });
@@ -164,6 +207,10 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse: (
 
       if (message.type === MESSAGE_RUN_RECIPE) {
         return await runRecipeInCurrentTab(message);
+      }
+
+      if (message.type === MESSAGE_DISCOVER_URLS) {
+        return await discoverUrlsInCurrentTab(message);
       }
 
       if (message.type === MESSAGE_START_BATCH_RUN) {

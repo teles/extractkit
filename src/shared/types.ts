@@ -269,6 +269,46 @@ export type CurrentTabInfo = {
   title?: string;
 };
 
+export type UrlDiscoveryOptions = {
+  sameDomainOnly: boolean;
+  removeDuplicates: boolean;
+  removeFragments: boolean;
+  maxUrls: number;
+};
+
+export type RawDiscoveredLink = {
+  index: number;
+  href: string;
+  absoluteUrl: string;
+  text?: string;
+};
+
+export type UrlDiscoveryStatus = 'discovered' | 'duplicate' | 'unsupported' | 'external' | 'invalid';
+
+export type UrlDiscoveryItem = {
+  id: string;
+  url: string;
+  text?: string;
+  status: UrlDiscoveryStatus;
+  rawHref?: string;
+};
+
+export type UrlDiscoveryCounts = {
+  discovered: number;
+  duplicates: number;
+  unsupported: number;
+  externalExcluded: number;
+  invalid: number;
+  skipped: number;
+};
+
+export type UrlDiscoveryResult = {
+  sourceUrl: string;
+  sourceTitle?: string;
+  items: UrlDiscoveryItem[];
+  counts: UrlDiscoveryCounts;
+};
+
 export type RecipesById = Record<string, Recipe>;
 export type RunsById = Record<string, RecipeRun>;
 export type BatchRunsById = Record<string, BatchRun>;

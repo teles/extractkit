@@ -1,4 +1,13 @@
-import type { BatchRun, BatchRunOptions, CurrentTabInfo, Recipe, ScrapeResult } from './types';
+import type {
+  BatchRun,
+  BatchRunOptions,
+  CurrentTabInfo,
+  RawDiscoveredLink,
+  Recipe,
+  ScrapeResult,
+  UrlDiscoveryOptions,
+  UrlDiscoveryResult
+} from './types';
 
 export const MESSAGE_GET_CURRENT_TAB = 'extractkit:get-current-tab';
 export const MESSAGE_RUN_RECIPE = 'extractkit:run-recipe';
@@ -7,7 +16,9 @@ export const MESSAGE_PAUSE_BATCH_RUN = 'extractkit:pause-batch-run';
 export const MESSAGE_RESUME_BATCH_RUN = 'extractkit:resume-batch-run';
 export const MESSAGE_STOP_BATCH_RUN = 'extractkit:stop-batch-run';
 export const MESSAGE_VIEW_BATCH_TAB = 'extractkit:view-batch-tab';
+export const MESSAGE_DISCOVER_URLS = 'extractkit:discover-urls';
 export const CONTENT_RUN_RECIPE = 'extractkit:content-run-recipe';
+export const CONTENT_DISCOVER_URLS = 'extractkit:content-discover-urls';
 
 export type GetCurrentTabMessage = {
   type: typeof MESSAGE_GET_CURRENT_TAB;
@@ -46,9 +57,18 @@ export type ViewBatchTabMessage = {
   batchId: string;
 };
 
+export type DiscoverUrlsMessage = {
+  type: typeof MESSAGE_DISCOVER_URLS;
+  options: UrlDiscoveryOptions;
+};
+
 export type ContentRunRecipeMessage = {
   type: typeof CONTENT_RUN_RECIPE;
   recipe: Recipe;
+};
+
+export type ContentDiscoverUrlsMessage = {
+  type: typeof CONTENT_DISCOVER_URLS;
 };
 
 export type PanelMessage =
@@ -58,8 +78,9 @@ export type PanelMessage =
   | PauseBatchRunMessage
   | ResumeBatchRunMessage
   | StopBatchRunMessage
-  | ViewBatchTabMessage;
-export type ContentMessage = ContentRunRecipeMessage;
+  | ViewBatchTabMessage
+  | DiscoverUrlsMessage;
+export type ContentMessage = ContentRunRecipeMessage | ContentDiscoverUrlsMessage;
 
 export type MessageResponse<T> =
   | {
@@ -74,6 +95,8 @@ export type MessageResponse<T> =
 export type CurrentTabResponse = MessageResponse<CurrentTabInfo | null>;
 export type RunRecipeResponse = MessageResponse<ScrapeResult>;
 export type BatchRunResponse = MessageResponse<BatchRun>;
+export type UrlDiscoveryResponse = MessageResponse<UrlDiscoveryResult>;
+export type ContentUrlDiscoveryResponse = MessageResponse<RawDiscoveredLink[]>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object';
@@ -91,10 +114,11 @@ export function isPanelMessage(value: unknown): value is PanelMessage {
     value.type === MESSAGE_PAUSE_BATCH_RUN ||
     value.type === MESSAGE_RESUME_BATCH_RUN ||
     value.type === MESSAGE_STOP_BATCH_RUN ||
-    value.type === MESSAGE_VIEW_BATCH_TAB
+    value.type === MESSAGE_VIEW_BATCH_TAB ||
+    value.type === MESSAGE_DISCOVER_URLS
   );
 }
 
 export function isContentMessage(value: unknown): value is ContentMessage {
-  return isRecord(value) && value.type === CONTENT_RUN_RECIPE;
+  return isRecord(value) && (value.type === CONTENT_RUN_RECIPE || value.type === CONTENT_DISCOVER_URLS);
 }

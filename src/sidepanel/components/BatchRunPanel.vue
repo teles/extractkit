@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   Clipboard,
+  Compass,
   ExternalLink,
   FileUp,
+  Link2,
   ListChecks,
   Pause,
   Play,
   Plus,
   RotateCcw,
+  Search,
   Square,
   Trash2,
   X
@@ -17,6 +21,7 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBatchRuns } from '../../composables/useBatchRuns';
+import { useCurrentTab } from '../../composables/useCurrentTab';
 import { useExport } from '../../composables/useExport';
 import { useRuns } from '../../composables/useRuns';
 import { useSettings } from '../../composables/useSettings';
@@ -29,7 +34,19 @@ import {
   validateBatchUrl
 } from '../../shared/batch-planner';
 import type { TranslationKey } from '../../shared/i18n';
-import type { BatchRun, BatchRunEvent, BatchRunOptions, Recipe, RecipeCategory } from '../../shared/types';
+import { MESSAGE_DISCOVER_URLS, type UrlDiscoveryResponse } from '../../shared/messaging';
+import type {
+  BatchRun,
+  BatchRunEvent,
+  BatchRunOptions,
+  Recipe,
+  RecipeCategory,
+  UrlDiscoveryCounts,
+  UrlDiscoveryItem,
+  UrlDiscoveryOptions,
+  UrlDiscoveryStatus
+} from '../../shared/types';
+import { DEFAULT_URL_DISCOVERY_OPTIONS } from '../../shared/url-discovery';
 import Badge from './Badge.vue';
 import Button from './Button.vue';
 import Card from './Card.vue';
@@ -55,9 +72,19 @@ type OpenTabCandidate = {
   reason?: string;
 };
 
+type DiscoveryReviewItem = UrlDiscoveryItem & {
+  selected: boolean;
+};
+
 const router = useRouter();
 const { t, preferences } = useSettings();
 const { success: toastSuccess, error: toastError } = useToast();
+const {
+  currentTab: discoveryCurrentTab,
+  loading: discoverySourceLoading,
+  error: discoverySourceError,
+  refreshCurrentTab: refreshDiscoverySource
+} = useCurrentTab();
 const {
   batchRuns,
   error,
@@ -93,6 +120,16 @@ const openTabs = ref<OpenTabCandidate[]>([]);
 const currentWindowOnly = ref(true);
 const sameDomainOnly = ref(false);
 const activeTabDomain = ref<string | null>(null);
+const discoverPanelOpen = ref(false);
+const discoveryLoading = ref(false);
+const discoveryError = ref<string | null>(null);
+const discoveryRan = ref(false);
+const discoverySourceUrl = ref('');
+const discoverySourceTitle = ref('');
+const discoverySearch = ref('');
+const discoveryOptions = ref<UrlDiscoveryOptions>({ ...DEFAULT_URL_DISCOVERY_OPTIONS });
+const discoveryCounts = ref<UrlDiscoveryCounts | null>(null);
+const discoveryItems = ref<DiscoveryReviewItem[]>([]);
 
 let pollingId: number | undefined;
 
@@ -106,6 +143,24 @@ const visibleOpenTabs = computed(() =>
   openTabs.value.filter((tab) => !sameDomainOnly.value || (activeTabDomain.value && tab.domain === activeTabDomain.value))
 );
 const selectedOpenTabCount = computed(() => visibleOpenTabs.value.filter((tab) => tab.supported && tab.selected).length);
+const discoverySourceDisplay = computed(() => discoverySourceUrl.value || discoveryCurrentTab.value?.url || '');
+const discoverySourceSupported = computed(() => validateBatchUrl(discoverySourceDisplay.value).ok);
+const selectedDiscoveryCount = computed(
+  () => discoveryItems.value.filter((item) => item.status === 'discovered' && item.selected).length
+);
+const visibleDiscoveryItems = computed(() => {
+  const query = discoverySearch.value.trim().toLowerCase();
+  if (!query) {
+    return discoveryItems.value;
+  }
+
+  return discoveryItems.value.filter(
+    (item) =>
+      item.url.toLowerCase().includes(query) ||
+      item.text?.toLowerCase().includes(query) ||
+      discoveryStatusLabel(item.status).toLowerCase().includes(query)
+  );
+});
 const activeStoredBatch = computed(
   () => batchRuns.value.find((batch) => batch.status === 'running' || batch.status === 'paused') ?? null
 );
@@ -339,7 +394,8 @@ function queryBrowserTabs(queryInfo: chrome.tabs.QueryInfo): Promise<chrome.tabs
   });
 }
 
-function appendUrlCandidates(candidates: string[]): UrlAppendSummary {
+function appendUrlCandidates(candidates: string[], appendOptions: { skipDuplicates?: boolean } = {}): UrlAppendSummary {
+  const skipDuplicates = appendOptions.skipDuplicates ?? true;
   const existingUrls = new Set(urlInput.value.validUrls);
   const addedUrls: string[] = [];
   let duplicatesSkipped = 0;
@@ -357,7 +413,7 @@ function appendUrlCandidates(candidates: string[]): UrlAppendSummary {
       continue;
     }
 
-    if (existingUrls.has(validation.url)) {
+    if (skipDuplicates && existingUrls.has(validation.url)) {
       duplicatesSkipped += 1;
       continue;
     }
@@ -464,6 +520,155 @@ function toggleOpenTab(tabId: number, selected: boolean): void {
 function addSelectedOpenTabs(): void {
   appendUrlCandidates(visibleOpenTabs.value.filter((tab) => tab.supported && tab.selected).map((tab) => tab.url));
   closeOpenTabsPicker();
+}
+
+function discoveryStatusLabel(status: UrlDiscoveryStatus): string {
+  if (status === 'discovered') {
+    return t('batch.discovery.discovered');
+  }
+
+  if (status === 'duplicate') {
+    return t('batch.discovery.duplicate');
+  }
+
+  if (status === 'external') {
+    return t('batch.discovery.externalUrl');
+  }
+
+  if (status === 'unsupported') {
+    return t('batch.discovery.unsupportedUrl');
+  }
+
+  return t('batch.discovery.invalidUrl');
+}
+
+function discoveryStatusVariant(status: UrlDiscoveryStatus): 'neutral' | 'success' | 'warning' | 'danger' | 'accent' {
+  if (status === 'discovered') {
+    return 'success';
+  }
+
+  if (status === 'duplicate' || status === 'external') {
+    return 'warning';
+  }
+
+  if (status === 'invalid' || status === 'unsupported') {
+    return 'danger';
+  }
+
+  return 'neutral';
+}
+
+function discoveryErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return t('batch.discovery.permissionError');
+  }
+
+  const message = error.message.toLowerCase();
+  if (message.includes('receiving end does not exist') || message.includes('message port closed')) {
+    return t('batch.discovery.contentUnavailable');
+  }
+
+  return error.message;
+}
+
+async function openDiscoverUrls(): Promise<void> {
+  discoverPanelOpen.value = true;
+  discoveryError.value = null;
+  discoveryRan.value = false;
+  discoverySearch.value = '';
+  discoveryItems.value = [];
+  discoveryCounts.value = null;
+  await refreshDiscoverySource();
+  discoverySourceUrl.value = discoveryCurrentTab.value?.url ?? '';
+  discoverySourceTitle.value = discoveryCurrentTab.value?.title ?? '';
+}
+
+function closeDiscoverUrls(): void {
+  discoverPanelOpen.value = false;
+  discoveryError.value = null;
+}
+
+async function runUrlDiscovery(): Promise<void> {
+  discoveryLoading.value = true;
+  discoveryError.value = null;
+  discoveryRan.value = false;
+  discoveryItems.value = [];
+  discoveryCounts.value = null;
+
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      throw new Error(t('batch.discovery.permissionError'));
+    }
+
+    if (!discoverySourceDisplay.value) {
+      throw new Error(t('batch.discovery.noActiveTab'));
+    }
+
+    if (!discoverySourceSupported.value) {
+      throw new Error(t('batch.discovery.unsupportedUrl'));
+    }
+
+    const options: UrlDiscoveryOptions = {
+      ...discoveryOptions.value,
+      maxUrls: Math.min(1000, Math.max(1, Math.round(Number(discoveryOptions.value.maxUrls) || 100)))
+    };
+    discoveryOptions.value = options;
+
+    const response = (await chrome.runtime.sendMessage({
+      type: MESSAGE_DISCOVER_URLS,
+      options
+    })) as UrlDiscoveryResponse;
+
+    if (!response.ok) {
+      throw new Error(response.error);
+    }
+
+    discoverySourceUrl.value = response.data.sourceUrl;
+    discoverySourceTitle.value = response.data.sourceTitle ?? discoverySourceTitle.value;
+    discoveryCounts.value = response.data.counts;
+    discoveryItems.value = response.data.items.map((item) => ({
+      ...item,
+      selected: item.status === 'discovered'
+    }));
+    discoveryRan.value = true;
+  } catch (caughtError) {
+    discoveryError.value = discoveryErrorMessage(caughtError);
+  } finally {
+    discoveryLoading.value = false;
+  }
+}
+
+function toggleDiscoveredUrl(itemId: string, selected: boolean): void {
+  discoveryItems.value = discoveryItems.value.map((item) =>
+    item.id === itemId ? { ...item, selected: item.status === 'discovered' && selected } : item
+  );
+}
+
+function selectAllDiscoveredUrls(): void {
+  const visibleIds = new Set(
+    visibleDiscoveryItems.value.filter((item) => item.status === 'discovered').map((item) => item.id)
+  );
+  discoveryItems.value = discoveryItems.value.map((item) =>
+    visibleIds.has(item.id) ? { ...item, selected: true } : item
+  );
+}
+
+function clearDiscoverySelection(): void {
+  discoveryItems.value = discoveryItems.value.map((item) => ({ ...item, selected: false }));
+}
+
+function addSelectedDiscoveredUrls(): void {
+  const urls = discoveryItems.value
+    .filter((item) => item.status === 'discovered' && item.selected)
+    .map((item) => item.url);
+
+  if (urls.length === 0) {
+    toastError(t('batch.discovery.noUrlsSelected'));
+    return;
+  }
+
+  appendUrlCandidates(urls, { skipDuplicates: discoveryOptions.value.removeDuplicates });
+  closeDiscoverUrls();
 }
 
 function triggerFileImport(): void {
@@ -827,6 +1032,162 @@ function runStatusLabel(batch: BatchRun): string {
     </template>
 
     <template v-else>
+      <template v-if="discoverPanelOpen">
+        <Card>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-start gap-2">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-600/15 dark:text-brand-400">
+                <Compass class="h-5 w-5" :stroke-width="2.1" aria-hidden="true" />
+              </div>
+              <div class="min-w-0">
+                <p class="field-label">{{ t('batch.discovery.discoverFromActiveTab') }}</p>
+                <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">{{ t('batch.discovery.discoverUrls') }}</h2>
+              </div>
+            </div>
+            <Button size="xs" variant="ghost" @click="closeDiscoverUrls">
+              <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
+              {{ t('batch.batchRun') }}
+            </Button>
+          </div>
+
+          <div class="mt-4 grid gap-2">
+            <div>
+              <p class="field-label">{{ t('batch.discovery.sourcePage') }}</p>
+              <p class="mt-1 truncate rounded-md border border-ink-200 bg-ink-100 px-2.5 py-2 font-mono text-xs text-ink-700 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100">
+                {{ discoverySourceDisplay || '—' }}
+              </p>
+              <p v-if="discoverySourceTitle" class="mt-1 truncate text-xs font-medium text-ink-500 dark:text-ink-300">
+                {{ discoverySourceTitle }}
+              </p>
+            </div>
+
+            <p v-if="discoverySourceError" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+              {{ discoverySourceError }}
+            </p>
+            <p v-else-if="discoverySourceDisplay && !discoverySourceSupported" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+              {{ t('batch.discovery.unsupportedUrl') }}
+            </p>
+            <p v-else-if="!discoverySourceDisplay && !discoverySourceLoading" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+              {{ t('batch.discovery.noActiveTab') }}
+            </p>
+          </div>
+        </Card>
+
+        <Card>
+          <div class="grid gap-3">
+            <div class="grid gap-2">
+              <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
+                <input v-model="discoveryOptions.sameDomainOnly" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
+                {{ t('batch.discovery.sameDomainOnly') }}
+              </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
+                <input v-model="discoveryOptions.removeDuplicates" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
+                {{ t('batch.discovery.removeDuplicates') }}
+              </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
+                <input v-model="discoveryOptions.removeFragments" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
+                {{ t('batch.discovery.removeFragments') }}
+              </label>
+            </div>
+
+            <label class="grid gap-1">
+              <span class="field-label">{{ t('batch.discovery.maxUrls') }}</span>
+              <input v-model.number="discoveryOptions.maxUrls" class="input" min="1" max="1000" type="number" />
+            </label>
+
+            <Button
+              variant="primary"
+              :disabled="discoveryLoading || discoverySourceLoading || !discoverySourceSupported"
+              @click="runUrlDiscovery"
+            >
+              <Search class="h-3.5 w-3.5" aria-hidden="true" />
+              {{ discoveryLoading ? t('home.running') : t('batch.discovery.runDiscovery') }}
+            </Button>
+
+            <p v-if="discoveryError" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-semibold text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+              {{ discoveryError }}
+            </p>
+          </div>
+        </Card>
+
+        <Card v-if="discoveryRan">
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
+              <Link2 class="h-4 w-4 shrink-0 text-brand-700 dark:text-brand-400" :stroke-width="2.1" aria-hidden="true" />
+              <div class="min-w-0">
+                <p class="field-label">{{ t('batch.discovery.discoveredUrls') }}</p>
+                <h2 class="truncate text-base font-semibold text-ink-900 dark:text-ink-50">
+                  {{ discoveryCounts?.discovered ?? 0 }} {{ t('batch.discovery.discovered') }}
+                </h2>
+              </div>
+            </div>
+            <Badge variant="primary">{{ selectedDiscoveryCount }} {{ t('batch.discovery.selected') }}</Badge>
+          </div>
+
+          <div class="mb-3 flex flex-wrap gap-1.5">
+            <Badge variant="success">{{ discoveryCounts?.discovered ?? 0 }} {{ t('batch.discovery.discovered') }}</Badge>
+            <Badge variant="primary">{{ selectedDiscoveryCount }} {{ t('batch.discovery.selected') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.skipped ?? 0 }} {{ t('batch.discovery.skipped') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.duplicates ?? 0 }} {{ t('batch.discovery.duplicate') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.unsupported ?? 0 }} {{ t('batch.discovery.unsupportedUrl') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.externalExcluded ?? 0 }} {{ t('batch.discovery.externalUrl') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.invalid ?? 0 }} {{ t('batch.discovery.invalidUrl') }}</Badge>
+          </div>
+
+          <div class="mb-3 grid gap-2">
+            <input v-model="discoverySearch" class="input" :placeholder="t('data.filterUrl')" />
+            <div class="flex flex-wrap gap-2">
+              <Button size="xs" @click="selectAllDiscoveredUrls">{{ t('batch.discovery.selectAll') }}</Button>
+              <Button size="xs" variant="ghost" @click="clearDiscoverySelection">
+                {{ t('batch.discovery.clearSelection') }}
+              </Button>
+            </div>
+          </div>
+
+          <EmptyState
+            v-if="visibleDiscoveryItems.length === 0"
+            compact
+            :title="t('batch.discovery.noLinksFound')"
+          />
+
+          <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
+            <label
+              v-for="item in visibleDiscoveryItems"
+              :key="item.id"
+              class="flex items-start gap-2 rounded-md border border-ink-200 bg-white p-2 dark:border-ink-700 dark:bg-ink-950"
+              :class="item.status === 'discovered' ? 'cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-900' : 'opacity-70'"
+            >
+              <input
+                class="mt-1 h-4 w-4 rounded border-ink-300 text-brand-600"
+                type="checkbox"
+                :checked="item.selected"
+                :disabled="item.status !== 'discovered'"
+                @change="toggleDiscoveredUrl(item.id, ($event.target as HTMLInputElement).checked)"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <p class="min-w-0 flex-1 truncate font-mono text-xs text-ink-900 dark:text-ink-50">{{ item.url }}</p>
+                  <Badge :variant="discoveryStatusVariant(item.status)">{{ discoveryStatusLabel(item.status) }}</Badge>
+                </div>
+                <p v-if="item.text" class="mt-1 truncate text-xs text-ink-500 dark:text-ink-300">{{ item.text }}</p>
+                <p v-if="item.status !== 'discovered' && item.rawHref" class="meta-line mt-0.5 truncate">{{ item.rawHref }}</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="mt-3 grid gap-2">
+            <Button variant="primary" :disabled="selectedDiscoveryCount === 0" @click="addSelectedDiscoveredUrls">
+              {{ t('batch.discovery.addSelectedUrls') }}
+            </Button>
+            <Button variant="ghost" @click="closeDiscoverUrls">
+              <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
+              {{ t('batch.batchRun') }}
+            </Button>
+          </div>
+        </Card>
+      </template>
+
+      <template v-else>
       <Card>
         <label class="grid gap-1">
           <span class="field-label">{{ t('batch.name') }}</span>
@@ -845,6 +1206,10 @@ function runStatusLabel(batch: BatchRun): string {
             <Button size="xs" variant="ghost" @click="openTabsPicker">
               <Plus class="h-3.5 w-3.5" aria-hidden="true" />
               {{ t('batch.addOpenTabs') }}
+            </Button>
+            <Button size="xs" variant="ghost" @click="openDiscoverUrls">
+              <Compass class="h-3.5 w-3.5" aria-hidden="true" />
+              {{ t('batch.discovery.discoverUrls') }}
             </Button>
             <Button size="xs" variant="ghost" @click="triggerFileImport">
               <FileUp class="h-3.5 w-3.5" aria-hidden="true" />
@@ -1161,6 +1526,7 @@ function runStatusLabel(batch: BatchRun): string {
           </Button>
         </div>
       </Card>
+      </template>
     </template>
   </div>
 </template>

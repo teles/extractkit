@@ -187,6 +187,30 @@ export type TranslationKey =
   | 'batch.currentWindowOnly'
   | 'batch.sameDomainAsActiveTab'
   | 'batch.selectAllSupported'
+  | 'batch.discovery.discoverUrls'
+  | 'batch.discovery.discoverFromActiveTab'
+  | 'batch.discovery.sourcePage'
+  | 'batch.discovery.sameDomainOnly'
+  | 'batch.discovery.removeDuplicates'
+  | 'batch.discovery.removeFragments'
+  | 'batch.discovery.maxUrls'
+  | 'batch.discovery.runDiscovery'
+  | 'batch.discovery.discoveredUrls'
+  | 'batch.discovery.addSelectedUrls'
+  | 'batch.discovery.selectAll'
+  | 'batch.discovery.clearSelection'
+  | 'batch.discovery.noLinksFound'
+  | 'batch.discovery.noUrlsSelected'
+  | 'batch.discovery.unsupportedUrl'
+  | 'batch.discovery.externalUrl'
+  | 'batch.discovery.duplicate'
+  | 'batch.discovery.invalidUrl'
+  | 'batch.discovery.discovered'
+  | 'batch.discovery.selected'
+  | 'batch.discovery.skipped'
+  | 'batch.discovery.noActiveTab'
+  | 'batch.discovery.permissionError'
+  | 'batch.discovery.contentUnavailable'
   | 'batch.cancelled'
   | 'batch.browsingNote'
   | 'batch.keepTabOpen'
@@ -584,6 +608,30 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.currentWindowOnly': 'Current window only',
     'batch.sameDomainAsActiveTab': 'Same domain as active tab',
     'batch.selectAllSupported': 'Select all supported',
+    'batch.discovery.discoverUrls': 'Discover URLs',
+    'batch.discovery.discoverFromActiveTab': 'Discover from active tab',
+    'batch.discovery.sourcePage': 'Source page',
+    'batch.discovery.sameDomainOnly': 'Same domain only',
+    'batch.discovery.removeDuplicates': 'Remove duplicates',
+    'batch.discovery.removeFragments': 'Remove fragments',
+    'batch.discovery.maxUrls': 'Max URLs',
+    'batch.discovery.runDiscovery': 'Run discovery',
+    'batch.discovery.discoveredUrls': 'Discovered URLs',
+    'batch.discovery.addSelectedUrls': 'Add selected URLs',
+    'batch.discovery.selectAll': 'Select all',
+    'batch.discovery.clearSelection': 'Clear selection',
+    'batch.discovery.noLinksFound': 'No links found',
+    'batch.discovery.noUrlsSelected': 'No URLs selected',
+    'batch.discovery.unsupportedUrl': 'Unsupported URL',
+    'batch.discovery.externalUrl': 'External URL',
+    'batch.discovery.duplicate': 'Duplicate',
+    'batch.discovery.invalidUrl': 'Invalid URL',
+    'batch.discovery.discovered': 'Discovered',
+    'batch.discovery.selected': 'Selected',
+    'batch.discovery.skipped': 'Skipped',
+    'batch.discovery.noActiveTab': 'No active tab found.',
+    'batch.discovery.permissionError': 'Could not read links from the active tab.',
+    'batch.discovery.contentUnavailable': 'Could not connect to the active tab. Reload the page and try again.',
     'batch.cancelled': 'Batch cancelled',
     'batch.browsingNote': 'You can keep browsing in other tabs while the batch runs.',
     'batch.keepTabOpen': 'Keep the processing tab open while the batch is running.',
@@ -981,6 +1029,31 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.currentWindowOnly': 'Apenas janela atual',
     'batch.sameDomainAsActiveTab': 'Mesmo domínio da aba ativa',
     'batch.selectAllSupported': 'Selecionar todas suportadas',
+    'batch.discovery.discoverUrls': 'Descobrir URLs',
+    'batch.discovery.discoverFromActiveTab': 'Descobrir da aba ativa',
+    'batch.discovery.sourcePage': 'Página de origem',
+    'batch.discovery.sameDomainOnly': 'Apenas mesmo domínio',
+    'batch.discovery.removeDuplicates': 'Remover duplicadas',
+    'batch.discovery.removeFragments': 'Remover fragmentos',
+    'batch.discovery.maxUrls': 'Máximo de URLs',
+    'batch.discovery.runDiscovery': 'Executar descoberta',
+    'batch.discovery.discoveredUrls': 'URLs descobertas',
+    'batch.discovery.addSelectedUrls': 'Adicionar URLs selecionadas',
+    'batch.discovery.selectAll': 'Selecionar todas',
+    'batch.discovery.clearSelection': 'Limpar seleção',
+    'batch.discovery.noLinksFound': 'Nenhum link encontrado',
+    'batch.discovery.noUrlsSelected': 'Nenhuma URL selecionada',
+    'batch.discovery.unsupportedUrl': 'URL não suportada',
+    'batch.discovery.externalUrl': 'URL externa',
+    'batch.discovery.duplicate': 'Duplicada',
+    'batch.discovery.invalidUrl': 'URL inválida',
+    'batch.discovery.discovered': 'Descobertas',
+    'batch.discovery.selected': 'Selecionadas',
+    'batch.discovery.skipped': 'Ignoradas',
+    'batch.discovery.noActiveTab': 'Nenhuma aba ativa encontrada.',
+    'batch.discovery.permissionError': 'Não foi possível ler links da aba ativa.',
+    'batch.discovery.contentUnavailable':
+      'Não foi possível conectar à aba ativa. Recarregue a página e tente novamente.',
     'batch.cancelled': 'Lote cancelado',
     'batch.browsingNote': 'Você pode continuar navegando em outras abas enquanto o lote roda.',
     'batch.keepTabOpen': 'Mantenha a aba de processamento aberta enquanto o lote estiver em execução.',
