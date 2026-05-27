@@ -280,7 +280,7 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   return strings.length > 0 ? strings : fallback;
 }
 
-function normalizeRecipe(value: unknown): Recipe | null {
+export function normalizeRecipe(value: unknown): Recipe | null {
   if (!isRecord(value)) {
     return null;
   }
