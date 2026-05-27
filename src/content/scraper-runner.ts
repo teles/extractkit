@@ -1,5 +1,9 @@
-import type { ContentUrlDiscoveryResponse, RunRecipeResponse } from '../shared/messaging';
-import { CONTENT_DISCOVER_URLS, CONTENT_RUN_RECIPE, isContentMessage } from '../shared/messaging';
+import type {
+  ContentDiscoverUrlsMessage,
+  ContentRunRecipeMessage,
+  ContentUrlDiscoveryResponse,
+  RunRecipeResponse
+} from '../shared/messaging';
 import { runRecipe } from '../shared/scraper-engine';
 import type { RawDiscoveredLink } from '../shared/types';
 
@@ -14,6 +18,18 @@ declare global {
 }
 
 const CONTENT_SCRIPT_VERSION = 2;
+const CONTENT_RUN_RECIPE = 'extractkit:content-run-recipe';
+const CONTENT_DISCOVER_URLS = 'extractkit:content-discover-urls';
+
+type ContentMessage = ContentRunRecipeMessage | ContentDiscoverUrlsMessage;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object';
+}
+
+function isContentMessage(value: unknown): value is ContentMessage {
+  return isRecord(value) && (value.type === CONTENT_RUN_RECIPE || value.type === CONTENT_DISCOVER_URLS);
+}
 
 function errorResponse(message: string): { ok: false; error: string } {
   return {
