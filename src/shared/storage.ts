@@ -7,6 +7,8 @@ import type {
   CheckSeverity,
   LocalePreference,
   OnboardingState,
+  ProcessingViewportPreset,
+  ProcessingViewportSettings,
   Recipe,
   RecipeCategory,
   RecipeCheck,
@@ -89,6 +91,9 @@ function defaultPreferences(): UserPreferences {
   return {
     theme: 'system',
     locale: 'en-US',
+    processingViewport: {
+      preset: 'current-window'
+    },
     batchDefaults: {
       skipHttpErrorPages: DEFAULT_BATCH_RUN_OPTIONS.skipHttpErrorPages
     },
@@ -110,6 +115,43 @@ function isThemePreference(value: unknown): value is ThemePreference {
 
 function isLocalePreference(value: unknown): value is LocalePreference {
   return value === 'en-US' || value === 'pt-BR';
+}
+
+const processingViewportPresets = new Set<string>([
+  'current-window',
+  'desktop-1366x768',
+  'desktop-1440x900',
+  'desktop-1920x1080',
+  'tablet-768x1024',
+  'mobile-390x844',
+  'custom'
+]);
+
+function isProcessingViewportPreset(value: unknown): value is ProcessingViewportPreset {
+  return typeof value === 'string' && processingViewportPresets.has(value);
+}
+
+function normalizeProcessingViewport(value: unknown): ProcessingViewportSettings {
+  const fallback: ProcessingViewportSettings = { preset: 'current-window' };
+  if (!isRecord(value)) {
+    return fallback;
+  }
+
+  const preset = isProcessingViewportPreset(value.preset) ? value.preset : 'current-window';
+  if (preset !== 'custom') {
+    return { preset };
+  }
+
+  const w = typeof value.customWidth === 'number' ? Math.round(value.customWidth) : undefined;
+  const h = typeof value.customHeight === 'number' ? Math.round(value.customHeight) : undefined;
+  const validW = w !== undefined && w >= 320 && w <= 3840;
+  const validH = h !== undefined && h >= 480 && h <= 2160;
+
+  return {
+    preset: 'custom',
+    customWidth: validW ? w : undefined,
+    customHeight: validH ? h : undefined
+  };
 }
 
 function normalizePreferences(value: unknown): UserPreferences {
@@ -142,10 +184,14 @@ function normalizePreferences(value: unknown): UserPreferences {
             : (defaults.batchDefaults?.skipHttpErrorPages ?? true)
       }
     : defaults.batchDefaults;
+  const processingViewport = isRecord(value.processingViewport)
+    ? normalizeProcessingViewport(value.processingViewport)
+    : defaults.processingViewport;
 
   return {
     theme: isThemePreference(value.theme) ? value.theme : defaults.theme,
     locale: isLocalePreference(value.locale) ? value.locale : defaults.locale,
+    processingViewport,
     batchDefaults,
     exportOptions
   };
@@ -614,6 +660,7 @@ export async function updatePreferences(partialPreferences: Partial<UserPreferen
   const nextPreferences = normalizePreferences({
     ...currentPreferences,
     ...partialPreferences,
+    processingViewport: partialPreferences.processingViewport ?? currentPreferences.processingViewport,
     batchDefaults: partialPreferences.batchDefaults
       ? {
           ...currentPreferences.batchDefaults,

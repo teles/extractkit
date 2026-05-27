@@ -39,7 +39,10 @@ if (!window.__EXTRACTKIT_CONTENT_READY__) {
 
         sendResponse({
           ok: true,
-          data: result
+          data: {
+            ...result,
+            viewport: { width: window.innerWidth, height: window.innerHeight }
+          }
         });
       } catch (error) {
         sendResponse(errorResponse(error instanceof Error ? error.message : 'Unexpected error while running recipe.'));

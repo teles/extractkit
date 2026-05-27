@@ -247,6 +247,7 @@ export type RecipeRun = {
   checks?: RecipeChecksResult;
   warnings: FieldWarning[];
   errors: FieldError[];
+  environment?: RunEnvironment;
 };
 
 export type ScrapeResult = {
@@ -259,6 +260,7 @@ export type ScrapeResult = {
   checks?: RecipeChecksResult;
   warnings: FieldWarning[];
   errors: FieldError[];
+  viewport?: { width: number; height: number };
 };
 
 export type CurrentTabInfo = {
@@ -289,9 +291,43 @@ export type OutputValidationResult = {
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type LocalePreference = 'en-US' | 'pt-BR';
 
+export type ProcessingViewportPreset =
+  | 'current-window'
+  | 'desktop-1366x768'
+  | 'desktop-1440x900'
+  | 'desktop-1920x1080'
+  | 'tablet-768x1024'
+  | 'mobile-390x844'
+  | 'custom';
+
+export type ProcessingViewportSettings = {
+  preset: ProcessingViewportPreset;
+  customWidth?: number;
+  customHeight?: number;
+};
+
+export type RunEnvironmentViewport = {
+  width?: number;
+  height?: number;
+  source: 'current-window' | 'preset' | 'custom';
+  label?: string;
+};
+
+export type RunEnvironment = {
+  viewport?: RunEnvironmentViewport;
+};
+
+export type ResolvedProcessingViewport = {
+  width?: number;
+  height?: number;
+  source: 'current-window' | 'preset' | 'custom';
+  label: string;
+};
+
 export type UserPreferences = {
   theme: ThemePreference;
   locale: LocalePreference;
+  processingViewport?: ProcessingViewportSettings;
   batchDefaults?: {
     skipHttpErrorPages: boolean;
   };

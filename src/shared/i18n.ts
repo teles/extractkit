@@ -253,6 +253,21 @@ export type TranslationKey =
   | 'settings.exportEmpty'
   | 'settings.english'
   | 'settings.portuguese'
+  | 'settings.processingViewport'
+  | 'settings.processingViewportDescription'
+  | 'settings.viewport.currentWindow'
+  | 'settings.viewport.desktop1366'
+  | 'settings.viewport.desktop1440'
+  | 'settings.viewport.desktop1920'
+  | 'settings.viewport.tablet768'
+  | 'settings.viewport.mobile390'
+  | 'settings.viewport.custom'
+  | 'settings.viewport.width'
+  | 'settings.viewport.height'
+  | 'settings.viewport.label'
+  | 'settings.viewport.notRecorded'
+  | 'settings.viewport.invalid'
+  | 'settings.viewport.newWindowHint'
   | 'common.all'
   | 'common.local'
   | 'recipe.category.seo'
@@ -637,6 +652,21 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'settings.exportEmpty': 'No saved history to export.',
     'settings.english': 'English',
     'settings.portuguese': 'Português (Brasil)',
+    'settings.processingViewport': 'Processing viewport',
+    'settings.processingViewportDescription': 'Choose the viewport size used during batch extraction.',
+    'settings.viewport.currentWindow': 'Use current window size',
+    'settings.viewport.desktop1366': 'Desktop 1366 × 768',
+    'settings.viewport.desktop1440': 'Desktop 1440 × 900',
+    'settings.viewport.desktop1920': 'Desktop 1920 × 1080',
+    'settings.viewport.tablet768': 'Tablet 768 × 1024',
+    'settings.viewport.mobile390': 'Mobile 390 × 844',
+    'settings.viewport.custom': 'Custom',
+    'settings.viewport.width': 'Width',
+    'settings.viewport.height': 'Height',
+    'settings.viewport.label': 'Viewport',
+    'settings.viewport.notRecorded': 'Viewport not recorded',
+    'settings.viewport.invalid': 'Invalid viewport size',
+    'settings.viewport.newWindowHint': 'A separate browser window will be opened for batch runs.',
     'common.all': 'All',
     'common.local': 'local',
     'recipe.category.seo': 'SEO',
@@ -1021,6 +1051,21 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'settings.exportEmpty': 'Não há histórico salvo para exportar.',
     'settings.english': 'English',
     'settings.portuguese': 'Português (Brasil)',
+    'settings.processingViewport': 'Viewport de processamento',
+    'settings.processingViewportDescription': 'Escolha o tamanho de viewport usado durante a extração em lote.',
+    'settings.viewport.currentWindow': 'Usar tamanho da janela atual',
+    'settings.viewport.desktop1366': 'Desktop 1366 × 768',
+    'settings.viewport.desktop1440': 'Desktop 1440 × 900',
+    'settings.viewport.desktop1920': 'Desktop 1920 × 1080',
+    'settings.viewport.tablet768': 'Tablet 768 × 1024',
+    'settings.viewport.mobile390': 'Mobile 390 × 844',
+    'settings.viewport.custom': 'Personalizado',
+    'settings.viewport.width': 'Largura',
+    'settings.viewport.height': 'Altura',
+    'settings.viewport.label': 'Viewport',
+    'settings.viewport.notRecorded': 'Viewport não registrada',
+    'settings.viewport.invalid': 'Tamanho de viewport inválido',
+    'settings.viewport.newWindowHint': 'Uma janela separada do navegador será aberta para execuções em lote.',
     'common.all': 'Todas',
     'common.local': 'locais',
     'recipe.category.seo': 'SEO',

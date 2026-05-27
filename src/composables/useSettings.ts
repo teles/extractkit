@@ -1,7 +1,7 @@
 import { readonly, ref } from 'vue';
 import { type TranslationKey, translate } from '../shared/i18n';
 import { getPreferences, listRecipes, listRuns, savePreferences, updatePreferences } from '../shared/storage';
-import type { LocalePreference, ThemePreference, UserPreferences } from '../shared/types';
+import type { LocalePreference, ProcessingViewportSettings, ThemePreference, UserPreferences } from '../shared/types';
 
 const preferences = ref<UserPreferences>({
   theme: 'system',
@@ -94,6 +94,10 @@ export function useSettings() {
     });
   }
 
+  async function setProcessingViewport(viewport: ProcessingViewportSettings): Promise<void> {
+    preferences.value = await updatePreferences({ processingViewport: viewport });
+  }
+
   async function loadCounts(): Promise<void> {
     const [recipes, runs] = await Promise.all([listRecipes(), listRuns()]);
     recipeCount.value = recipes.length;
@@ -114,6 +118,7 @@ export function useSettings() {
     setTheme,
     setLocale,
     setSkipHttpErrorPagesDefault,
+    setProcessingViewport,
     applyTheme,
     loadCounts,
     t

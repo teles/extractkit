@@ -6,8 +6,25 @@ import { CONTENT_RUN_RECIPE } from '../shared/messaging';
 import { generateOutputSchema } from '../shared/output-schema';
 import { validateOutput } from '../shared/output-validation';
 import { statusWithReviewResults } from '../shared/run-status';
-import { getBatchRun, listBatchRuns, listRecipes, saveBatchRun, saveRun, updateBatchRun } from '../shared/storage';
-import type { BatchRun, BatchRunEvent, BatchRunOptions, Recipe, RecipeRun, ScrapeResult } from '../shared/types';
+import {
+  getBatchRun,
+  getPreferences,
+  listBatchRuns,
+  listRecipes,
+  saveBatchRun,
+  saveRun,
+  updateBatchRun
+} from '../shared/storage';
+import type {
+  BatchRun,
+  BatchRunEvent,
+  BatchRunOptions,
+  Recipe,
+  RecipeRun,
+  ResolvedProcessingViewport,
+  ScrapeResult
+} from '../shared/types';
+import { resolveProcessingViewport } from '../shared/viewport';
 
 type BatchController = {
   cancelled: boolean;
@@ -224,6 +241,32 @@ function createHttpStatusTracker(tabId: number): { getStatus: () => number | und
   };
 }
 
+async function createWindowForBatch(viewport?: ResolvedProcessingViewport): Promise<number> {
+  if (viewport && viewport.width !== undefined && viewport.height !== undefined) {
+    return new Promise((resolve, reject) => {
+      chrome.windows.create(
+        { url: 'about:blank', width: viewport.width, height: viewport.height, state: 'normal' },
+        (win) => {
+          const error = chrome.runtime.lastError;
+          if (error || !win?.tabs?.[0]?.id) {
+            reject(new Error(error?.message ?? 'Could not create the processing window.'));
+            return;
+          }
+
+          resolve(win.tabs[0].id as number);
+        }
+      );
+    });
+  }
+
+  const tab = await createTab({ url: 'about:blank', active: false, pinned: true });
+  if (!tab.id) {
+    throw new Error('Could not create the processing tab.');
+  }
+
+  return tab.id;
+}
+
 async function mutateBatch(batchId: string, mutate: (batch: BatchRun) => BatchRun): Promise<BatchRun | undefined> {
   const batch = await getBatchRun(batchId);
   if (!batch) {
@@ -405,7 +448,8 @@ async function runRecipeInTab(
   tabId: number,
   recipe: Recipe,
   batch: BatchRun,
-  batchUrlIndex: number
+  batchUrlIndex: number,
+  resolvedViewport?: ResolvedProcessingViewport
 ): Promise<RecipeRun> {
   try {
     await executeContentScript(tabId);
@@ -440,7 +484,17 @@ async function runRecipeInTab(
     validation,
     checks,
     warnings: scrapeResult.warnings,
-    errors: scrapeResult.errors
+    errors: scrapeResult.errors,
+    environment: resolvedViewport
+      ? {
+          viewport: {
+            width: scrapeResult.viewport?.width,
+            height: scrapeResult.viewport?.height,
+            source: resolvedViewport.source,
+            label: resolvedViewport.label
+          }
+        }
+      : undefined
   };
 }
 
@@ -490,7 +544,12 @@ async function ensureProcessingTab(batch: BatchRun): Promise<number> {
   return tab.id;
 }
 
-async function runBatch(batchId: string, recipes: Recipe[], controller: BatchController): Promise<void> {
+async function runBatch(
+  batchId: string,
+  recipes: Recipe[],
+  controller: BatchController,
+  resolvedViewport?: ResolvedProcessingViewport
+): Promise<void> {
   const initialBatch = await getBatchRun(batchId);
   if (!initialBatch?.processingTabId) {
     return;
@@ -621,7 +680,13 @@ async function runBatch(batchId: string, recipes: Recipe[], controller: BatchCon
 
         try {
           const currentBatch = await getBatchRun(batchId);
-          const run = await runRecipeInTab(tabId, recipe, currentBatch ?? initialBatch, mapping.urlIndex);
+          const run = await runRecipeInTab(
+            tabId,
+            recipe,
+            currentBatch ?? initialBatch,
+            mapping.urlIndex,
+            resolvedViewport
+          );
           const saved = shouldSaveRun(run, initialBatch.options);
           if (saved) {
             await saveRun(run);
@@ -732,13 +797,9 @@ export async function startBatchRun(message: StartBatchRunMessage): Promise<Runt
     };
   }
 
-  const tab = await createTab({ url: 'about:blank', active: false, pinned: true });
-  if (!tab.id) {
-    return {
-      ok: false,
-      error: 'Could not create the processing tab.'
-    };
-  }
+  const preferences = await getPreferences();
+  const resolvedViewport = resolveProcessingViewport(preferences);
+  const processingTabId = await createWindowForBatch(resolvedViewport);
 
   const createdAt = nowIso();
   const batch: BatchRun = {
@@ -748,7 +809,7 @@ export async function startBatchRun(message: StartBatchRunMessage): Promise<Runt
     createdAt,
     updatedAt: createdAt,
     startedAt: createdAt,
-    processingTabId: tab.id,
+    processingTabId,
     urls,
     recipeIds: recipes.map((recipe) => recipe.id),
     options,
@@ -769,7 +830,7 @@ export async function startBatchRun(message: StartBatchRunMessage): Promise<Runt
 
   const controller = { cancelled: false, pauseRequested: false };
   controllers.set(batch.id, controller);
-  void runBatch(batch.id, recipes, controller);
+  void runBatch(batch.id, recipes, controller, resolvedViewport);
 
   return {
     ok: true,
@@ -850,9 +911,11 @@ export async function resumeBatchRun(batchId: string): Promise<RuntimeBatchRespo
   }
 
   const recipes = (await listRecipes()).filter((recipe) => nextBatch.recipeIds.includes(recipe.id));
+  const preferences = await getPreferences();
+  const resolvedViewport = resolveProcessingViewport(preferences);
   const controller = { cancelled: false, pauseRequested: false };
   controllers.set(nextBatch.id, controller);
-  void runBatch(nextBatch.id, recipes, controller);
+  void runBatch(nextBatch.id, recipes, controller, resolvedViewport);
 
   return {
     ok: true,

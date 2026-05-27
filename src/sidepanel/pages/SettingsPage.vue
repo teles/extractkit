@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArchiveRestore, HardDrive, PackagePlus, Palette, Settings as SettingsIcon, ShieldCheck } from '@lucide/vue';
+import { ArchiveRestore, HardDrive, MonitorCog, PackagePlus, Palette, Settings as SettingsIcon, ShieldCheck } from '@lucide/vue';
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBatchRuns } from '../../composables/useBatchRuns';
@@ -11,7 +11,7 @@ import { useToast } from '../../composables/useToast';
 import { activeBatchFromList } from '../../shared/batch-state';
 import { restoreDefaultRecipes } from '../../shared/default-recipes';
 import { resetOnboarding } from '../../shared/storage';
-import type { LocalePreference, ThemePreference } from '../../shared/types';
+import type { LocalePreference, ProcessingViewportPreset, ThemePreference } from '../../shared/types';
 import Button from '../components/Button.vue';
 import PageHeader from '../components/PageHeader.vue';
 import SegmentedControl from '../components/SegmentedControl.vue';
@@ -28,6 +28,7 @@ const {
   setTheme,
   setLocale,
   setSkipHttpErrorPagesDefault,
+  setProcessingViewport,
   loadCounts,
   t
 } = useSettings();
@@ -68,6 +69,22 @@ async function updateSkipHttpErrorPagesDefault(value: boolean): Promise<void> {
   }
 
   await setSkipHttpErrorPagesDefault(value);
+}
+
+async function updateProcessingViewportPreset(preset: ProcessingViewportPreset): Promise<void> {
+  const current = preferences.value.processingViewport ?? { preset: 'current-window' };
+  await setProcessingViewport({ ...current, preset });
+}
+
+async function updateCustomViewport(width: number, height: number): Promise<void> {
+  const validW = Number.isInteger(width) && width >= 320 && width <= 3840;
+  const validH = Number.isInteger(height) && height >= 480 && height <= 2160;
+  if (!validW || !validH) {
+    toastError(t('settings.viewport.invalid'));
+    return;
+  }
+
+  await setProcessingViewport({ preset: 'custom', customWidth: width, customHeight: height });
 }
 
 async function exportAllRuns(): Promise<void> {
@@ -169,6 +186,59 @@ async function runSetupAgain(): Promise<void> {
         />
         <span>{{ t('settings.skipHttpErrorPagesDefault') }}</span>
       </label>
+    </SettingsCard>
+
+    <SettingsCard :title="t('settings.processingViewport')" :description="t('settings.processingViewportDescription')" :icon="MonitorCog" icon-tone="brand">
+      <div class="space-y-3">
+        <label class="grid gap-1.5">
+          <span class="field-label">{{ t('settings.viewport.label') }}</span>
+          <select
+            class="input"
+            :value="preferences.processingViewport?.preset ?? 'current-window'"
+            :disabled="loading"
+            @change="updateProcessingViewportPreset(($event.target as HTMLSelectElement).value as ProcessingViewportPreset)"
+          >
+            <option value="current-window">{{ t('settings.viewport.currentWindow') }}</option>
+            <option value="desktop-1366x768">{{ t('settings.viewport.desktop1366') }}</option>
+            <option value="desktop-1440x900">{{ t('settings.viewport.desktop1440') }}</option>
+            <option value="desktop-1920x1080">{{ t('settings.viewport.desktop1920') }}</option>
+            <option value="tablet-768x1024">{{ t('settings.viewport.tablet768') }}</option>
+            <option value="mobile-390x844">{{ t('settings.viewport.mobile390') }}</option>
+            <option value="custom">{{ t('settings.viewport.custom') }}</option>
+          </select>
+        </label>
+
+        <p v-if="(preferences.processingViewport?.preset ?? 'current-window') !== 'current-window'" class="rounded-md border border-amberline-100 bg-amberline-50 px-3 py-2 text-xs font-medium text-amberline-600 dark:border-amberline-500/30 dark:bg-amberline-500/10 dark:text-amberline-400">
+          {{ t('settings.viewport.newWindowHint') }}
+        </p>
+
+        <div v-if="(preferences.processingViewport?.preset ?? 'current-window') === 'custom'" class="grid grid-cols-2 gap-2">
+          <label class="grid gap-1.5">
+            <span class="field-label">{{ t('settings.viewport.width') }}</span>
+            <input
+              class="input"
+              type="number"
+              min="320"
+              max="3840"
+              :value="preferences.processingViewport?.customWidth ?? 1280"
+              :disabled="loading"
+              @change="updateCustomViewport(Number(($event.target as HTMLInputElement).value), preferences.processingViewport?.customHeight ?? 800)"
+            />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="field-label">{{ t('settings.viewport.height') }}</span>
+            <input
+              class="input"
+              type="number"
+              min="480"
+              max="2160"
+              :value="preferences.processingViewport?.customHeight ?? 800"
+              :disabled="loading"
+              @change="updateCustomViewport(preferences.processingViewport?.customWidth ?? 1280, Number(($event.target as HTMLInputElement).value))"
+            />
+          </label>
+        </div>
+      </div>
     </SettingsCard>
 
     <SettingsCard :title="t('settings.localData')" :icon="HardDrive" icon-tone="neutral">
