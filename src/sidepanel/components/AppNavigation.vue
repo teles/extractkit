@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, History, MoreVertical, Play, ScrollText, Settings } from '@lucide/vue';
+import { ArrowLeft, History, MoreVertical, ScrollText, Settings, Zap } from '@lucide/vue';
 import type { Component } from 'vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -13,7 +13,7 @@ type NavLink = {
 };
 
 const mainLinks = [
-  { to: '/', labelKey: 'nav.home', icon: Play },
+  { to: '/', labelKey: 'nav.home', icon: Zap },
   { to: '/recipes', labelKey: 'nav.recipes', icon: ScrollText },
   { to: '/runs', labelKey: 'nav.data', icon: History }
 ] satisfies NavLink[];
@@ -157,7 +157,7 @@ async function navigateBack(): Promise<void> {
       class="group flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-medium text-ink-500 transition focus:text-brand-700 active:text-brand-700 hover:text-brand-700 dark:text-ink-300 dark:hover:text-brand-400"
       active-class="is-active text-brand-700 dark:text-brand-400"
     >
-      <span class="inline-flex h-8 min-w-14 items-center justify-center rounded-2xl transition group-[.is-active]:bg-brand-50 dark:group-[.is-active]:bg-brand-600/15">
+      <span class="inline-flex h-7 w-10 items-center justify-center rounded-lg transition group-[.is-active]:bg-brand-100/60 dark:group-[.is-active]:bg-brand-600/15">
         <component
           :is="link.icon"
           class="h-5 w-5 text-current transition-colors group-[.is-active]:text-brand-700 dark:group-[.is-active]:text-brand-400"
