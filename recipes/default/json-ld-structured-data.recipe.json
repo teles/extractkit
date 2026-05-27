@@ -1,0 +1,35 @@
+{
+  "id": "default-json-ld-structured-data",
+  "name": "JSON-LD Structured Data",
+  "description": "Extracts JSON-LD structured data scripts from a page.",
+  "category": "structured-data",
+  "tags": ["json-ld", "schema", "structured-data", "seo"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-json-ld-structured-data-json-ld",
+      "kind": "field",
+      "key": "jsonLd",
+      "selector": "script[type=\"application/ld+json\"]",
+      "extract": "json",
+      "multiple": true,
+      "required": false
+    }
+  ],
+  "checks": [
+    {
+      "id": "check-json-ld-exists",
+      "name": "JSON-LD exists",
+      "description": "The page should include at least one JSON-LD structured data script for this recipe to extract.",
+      "selector": "script[type=\"application/ld+json\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "info"
+    }
+  ]
+}

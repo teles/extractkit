@@ -1,0 +1,40 @@
+{
+  "id": "default-headings-outline",
+  "name": "Headings Outline",
+  "description": "Extracts the visible heading structure from a page.",
+  "category": "content",
+  "tags": ["headings", "outline", "content", "seo"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-headings-outline-headings",
+      "kind": "group",
+      "key": "headings",
+      "selector": "h1, h2, h3, h4, h5, h6",
+      "multiple": true,
+      "fields": [
+        {
+          "id": "default-headings-outline-level",
+          "kind": "field",
+          "key": "level",
+          "selector": ":scope",
+          "extract": "tagName",
+          "required": false
+        },
+        {
+          "id": "default-headings-outline-text",
+          "kind": "field",
+          "key": "text",
+          "selector": ":scope",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"],
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "id": "default-page-images",
+  "name": "Page Images",
+  "description": "Extracts image URLs and alt text from the current page.",
+  "category": "images",
+  "tags": ["images", "alt", "media", "seo"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-page-images-images",
+      "kind": "group",
+      "key": "images",
+      "selector": "img",
+      "multiple": true,
+      "fields": [
+        {
+          "id": "default-page-images-src",
+          "kind": "field",
+          "key": "src",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "src",
+          "transforms": ["absoluteUrl"],
+          "required": false
+        },
+        {
+          "id": "default-page-images-alt",
+          "kind": "field",
+          "key": "alt",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "alt",
+          "transforms": ["trim"],
+          "required": false
+        },
+        {
+          "id": "default-page-images-loading",
+          "kind": "field",
+          "key": "loading",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "loading",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "default-page-images-alt-check",
+      "name": "Images should have alt attributes",
+      "description": "Images should not be missing the alt attribute.",
+      "selector": "img",
+      "assertion": {
+        "type": "missingAttributeCountEquals",
+        "attribute": "alt",
+        "value": 0
+      },
+      "severity": "info"
+    },
+    {
+      "id": "default-page-images-empty-alt-check",
+      "name": "Images should not have empty alt text",
+      "description": "Images with an alt attribute should usually not have empty alt text unless they are decorative.",
+      "selector": "img[alt]",
+      "assertion": {
+        "type": "emptyAttributeCountEquals",
+        "attribute": "alt",
+        "value": 0
+      },
+      "severity": "info"
+    }
+  ]
+}

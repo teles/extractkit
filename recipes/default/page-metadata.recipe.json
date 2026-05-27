@@ -1,0 +1,50 @@
+{
+  "id": "default-page-metadata",
+  "name": "Page Metadata",
+  "description": "Extracts basic metadata from any web page.",
+  "category": "metadata",
+  "tags": ["metadata", "seo", "head"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-page-metadata-document-title",
+      "kind": "field",
+      "key": "documentTitle",
+      "selector": "title",
+      "extract": "text",
+      "required": false
+    },
+    {
+      "id": "default-page-metadata-meta-description",
+      "kind": "field",
+      "key": "metaDescription",
+      "selector": "meta[name=\"description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-page-metadata-canonical",
+      "kind": "field",
+      "key": "canonical",
+      "selector": "link[rel=\"canonical\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-page-metadata-robots",
+      "kind": "field",
+      "key": "robots",
+      "selector": "meta[name=\"robots\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    }
+  ]
+}

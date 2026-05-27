@@ -1,0 +1,80 @@
+{
+  "id": "default-open-graph-tags",
+  "name": "Open Graph Tags",
+  "description": "Extracts Open Graph and Twitter social preview tags.",
+  "category": "social",
+  "tags": ["open-graph", "twitter", "social", "metadata"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-og-title",
+      "kind": "field",
+      "key": "ogTitle",
+      "selector": "meta[property=\"og:title\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-og-description",
+      "kind": "field",
+      "key": "ogDescription",
+      "selector": "meta[property=\"og:description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-og-image",
+      "kind": "field",
+      "key": "ogImage",
+      "selector": "meta[property=\"og:image\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-og-url",
+      "kind": "field",
+      "key": "ogUrl",
+      "selector": "meta[property=\"og:url\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-twitter-title",
+      "kind": "field",
+      "key": "twitterTitle",
+      "selector": "meta[name=\"twitter:title\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-twitter-description",
+      "kind": "field",
+      "key": "twitterDescription",
+      "selector": "meta[name=\"twitter:description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-twitter-image",
+      "kind": "field",
+      "key": "twitterImage",
+      "selector": "meta[name=\"twitter:image\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    }
+  ]
+}

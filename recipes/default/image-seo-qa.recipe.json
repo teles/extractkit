@@ -1,0 +1,119 @@
+{
+  "id": "default-image-seo-qa",
+  "name": "Image SEO QA",
+  "description": "Checks image alt text and dimensions for basic image SEO quality.",
+  "category": "qa",
+  "tags": ["images", "seo", "qa", "alt"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-image-seo-qa-image-count",
+      "kind": "field",
+      "key": "imageCount",
+      "selector": "img",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-image-seo-qa-images",
+      "kind": "group",
+      "key": "images",
+      "selector": "img",
+      "multiple": true,
+      "fields": [
+        {
+          "id": "default-image-seo-qa-src",
+          "kind": "field",
+          "key": "src",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "src",
+          "transforms": ["absoluteUrl"],
+          "required": false
+        },
+        {
+          "id": "default-image-seo-qa-alt",
+          "kind": "field",
+          "key": "alt",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "alt",
+          "transforms": ["trim"],
+          "required": false
+        },
+        {
+          "id": "default-image-seo-qa-width",
+          "kind": "field",
+          "key": "width",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "width",
+          "required": false
+        },
+        {
+          "id": "default-image-seo-qa-height",
+          "kind": "field",
+          "key": "height",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "height",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "check-images-without-alt",
+      "name": "Images should have alt attributes",
+      "description": "Images should not be missing the alt attribute.",
+      "selector": "img",
+      "assertion": {
+        "type": "missingAttributeCountEquals",
+        "attribute": "alt",
+        "value": 0
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "check-images-with-empty-alt",
+      "name": "Images should not have empty alt text",
+      "description": "Images with an alt attribute should usually not have empty alt text unless they are decorative.",
+      "selector": "img[alt]",
+      "assertion": {
+        "type": "emptyAttributeCountEquals",
+        "attribute": "alt",
+        "value": 0
+      },
+      "severity": "info"
+    },
+    {
+      "id": "check-images-without-width",
+      "name": "Images should have width attributes",
+      "description": "Images should include width attributes when possible to reduce layout shifts.",
+      "selector": "img",
+      "assertion": {
+        "type": "missingAttributeCountEquals",
+        "attribute": "width",
+        "value": 0
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "check-images-without-height",
+      "name": "Images should have height attributes",
+      "description": "Images should include height attributes when possible to reduce layout shifts.",
+      "selector": "img",
+      "assertion": {
+        "type": "missingAttributeCountEquals",
+        "attribute": "height",
+        "value": 0
+      },
+      "severity": "warning"
+    }
+  ]
+}

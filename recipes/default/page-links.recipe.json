@@ -1,0 +1,56 @@
+{
+  "id": "default-page-links",
+  "name": "Page Links",
+  "description": "Extracts links from the current page.",
+  "category": "links",
+  "tags": ["links", "internal-links", "external-links"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-page-links-links",
+      "kind": "group",
+      "key": "links",
+      "selector": "a[href]",
+      "multiple": true,
+      "fields": [
+        {
+          "id": "default-page-links-text",
+          "kind": "field",
+          "key": "text",
+          "selector": ":scope",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"],
+          "required": false
+        },
+        {
+          "id": "default-page-links-href",
+          "kind": "field",
+          "key": "href",
+          "selector": ":scope",
+          "extract": "attribute",
+          "attribute": "href",
+          "transforms": ["absoluteUrl"],
+          "required": false
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "default-page-links-href-check",
+      "name": "Links should have href attributes",
+      "description": "Anchor elements should have href attributes when they are intended to be links.",
+      "selector": "a",
+      "assertion": {
+        "type": "missingAttributeCountEquals",
+        "attribute": "href",
+        "value": 0
+      },
+      "severity": "info"
+    }
+  ]
+}

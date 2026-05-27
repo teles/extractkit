@@ -1,0 +1,130 @@
+{
+  "id": "default-seo-snapshot",
+  "name": "SEO Snapshot",
+  "description": "Extracts a quick SEO overview from the current page.",
+  "category": "seo",
+  "tags": ["seo", "metadata", "headings", "schema", "links"],
+  "source": "default",
+  "urlPatterns": ["*"],
+  "version": "1.0.0",
+  "createdAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "fields": [
+    {
+      "id": "default-seo-snapshot-document-title",
+      "kind": "field",
+      "key": "documentTitle",
+      "selector": "title",
+      "extract": "text",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-meta-description",
+      "kind": "field",
+      "key": "metaDescription",
+      "selector": "meta[name=\"description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-canonical",
+      "kind": "field",
+      "key": "canonical",
+      "selector": "link[rel=\"canonical\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-robots",
+      "kind": "field",
+      "key": "robots",
+      "selector": "meta[name=\"robots\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-h1",
+      "kind": "field",
+      "key": "h1",
+      "selector": "h1",
+      "extract": "text",
+      "multiple": true,
+      "transforms": ["trim", "removeExtraSpaces"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-json-ld",
+      "kind": "field",
+      "key": "jsonLd",
+      "selector": "script[type=\"application/ld+json\"]",
+      "extract": "json",
+      "multiple": true,
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-links-count",
+      "kind": "field",
+      "key": "linksCount",
+      "selector": "a[href]",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-images-count",
+      "kind": "field",
+      "key": "imagesCount",
+      "selector": "img",
+      "extract": "count",
+      "required": false
+    }
+  ],
+  "checks": [
+    {
+      "id": "check-title-exists",
+      "name": "Title tag exists",
+      "description": "The page should have a title tag.",
+      "selector": "title",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "check-meta-description-exists",
+      "name": "Meta description exists",
+      "description": "The page should have a meta description.",
+      "selector": "meta[name=\"description\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "info"
+    },
+    {
+      "id": "check-canonical-exists",
+      "name": "Canonical tag exists",
+      "description": "The page should have a canonical link tag.",
+      "selector": "link[rel=\"canonical\"]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "info"
+    },
+    {
+      "id": "check-single-h1",
+      "name": "Exactly one H1",
+      "description": "The page should usually have exactly one H1.",
+      "selector": "h1",
+      "assertion": {
+        "type": "countEquals",
+        "value": 1
+      },
+      "severity": "warning"
+    }
+  ]
+}
