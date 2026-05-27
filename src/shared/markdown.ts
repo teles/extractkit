@@ -10,7 +10,6 @@ const defaultMarkdownOptions: Required<MarkdownOptions> = {
   notAvailableLabel: 'Not available'
 };
 
-const longTextKeys = new Set(['about', 'description', 'descriptions', 'rawText', 'recommendationText']);
 const acronymWords = new Set([
   'css',
   'faq',
@@ -111,26 +110,7 @@ function heading(level: number, text: string, options?: MarkdownOptions): string
   return `${'#'.repeat(Math.min(Math.max(level, 1), 6))} ${escapeMarkdown(text, options)}`;
 }
 
-function itemTitle(item: Record<string, unknown>, index: number): string {
-  const preferredKeys = ['name', 'title', 'role', 'position', 'company', 'recommenderName', 'rawText'];
-  const value = preferredKeys
-    .map((key) => item[key])
-    .find((candidate) => typeof candidate === 'string' && candidate.trim());
-  if (typeof value === 'string') {
-    return `${index + 1}. ${textValue(value).slice(0, 90)}`;
-  }
-
-  for (const nestedKey of ['author', 'item']) {
-    const nested = item[nestedKey];
-    if (isRecord(nested) && typeof nested.name === 'string' && nested.name.trim()) {
-      return `${index + 1}. ${textValue(nested.name).slice(0, 90)}`;
-    }
-  }
-
-  if (typeof item['@type'] === 'string' && item['@type'].trim()) {
-    return `${index + 1}. ${textValue(item['@type']).slice(0, 90)}`;
-  }
-
+function genericItemTitle(index: number): string {
   return `${index + 1}. Item`;
 }
 
@@ -138,12 +118,8 @@ function primitiveToMarkdown(value: unknown, options?: MarkdownOptions): string 
   return escapeMarkdown(value, options);
 }
 
-function isLongTextField(key: string, value: unknown): boolean {
-  if (typeof value !== 'string') {
-    return false;
-  }
-
-  return longTextKeys.has(key) || value.length > 160 || value.includes('\n');
+function isLongTextField(value: unknown): boolean {
+  return typeof value === 'string' && (value.length > 160 || value.includes('\n'));
 }
 
 export function jsonToMarkdown(value: unknown, level = 3, options?: MarkdownOptions): string {
@@ -162,7 +138,7 @@ export function jsonToMarkdown(value: unknown, level = 3, options?: MarkdownOpti
       return value
         .map(
           (item, index) =>
-            `${heading(level, itemTitle(item, index), options)}\n\n${jsonToMarkdown(item, level + 1, options)}`
+            `${heading(level, genericItemTitle(index), options)}\n\n${jsonToMarkdown(item, level + 1, options)}`
         )
         .join('\n\n');
     }
@@ -184,7 +160,7 @@ export function jsonToMarkdown(value: unknown, level = 3, options?: MarkdownOpti
     return entries
       .map(([key, item]) => {
         if (isPrimitive(item)) {
-          if (isLongTextField(key, item)) {
+          if (isLongTextField(item)) {
             return `${heading(level, titleFromKey(key), options)}\n\n${primitiveToMarkdown(item, options)}`;
           }
 
