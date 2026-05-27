@@ -113,6 +113,7 @@ const options = ref<BatchRunOptions>({
 });
 const fileInput = ref<HTMLInputElement | null>(null);
 const importSummary = ref<UrlAppendSummary | null>(null);
+const urlActionsOpen = ref(false);
 const openTabsPanelOpen = ref(false);
 const openTabsLoading = ref(false);
 const openTabsError = ref<string | null>(null);
@@ -144,7 +145,15 @@ const visibleOpenTabs = computed(() =>
 );
 const selectedOpenTabCount = computed(() => visibleOpenTabs.value.filter((tab) => tab.supported && tab.selected).length);
 const discoverySourceDisplay = computed(() => discoverySourceUrl.value || discoveryCurrentTab.value?.url || '');
+const discoverySourceDomain = computed(() => domainFromUrl(discoverySourceDisplay.value));
+const discoverySourceTitleDisplay = computed(() => discoverySourceTitle.value || discoveryCurrentTab.value?.title || '—');
 const discoverySourceSupported = computed(() => validateBatchUrl(discoverySourceDisplay.value).ok);
+const discoverySourceIsSensitive = computed(() => {
+  const sourceText = `${discoverySourceDomain.value} ${discoverySourceTitleDisplay.value} ${discoverySourceDisplay.value}`;
+  return /\b(mail|bank|banking|banco|admin|account|inbox|checkout|cart|billing|wallet|login|orders?)\b/i.test(
+    sourceText
+  );
+});
 const selectedDiscoveryCount = computed(
   () => discoveryItems.value.filter((item) => item.status === 'discovered' && item.selected).length
 );
@@ -437,6 +446,7 @@ function appendUrlCandidates(candidates: string[], appendOptions: { skipDuplicat
 }
 
 async function pasteUrls(): Promise<void> {
+  urlActionsOpen.value = false;
   try {
     const pastedText = await navigator.clipboard.readText();
     urlsText.value = [urlsText.value.trim(), pastedText.trim()].filter(Boolean).join('\n');
@@ -499,6 +509,7 @@ async function loadOpenTabs(): Promise<void> {
 }
 
 async function openTabsPicker(): Promise<void> {
+  urlActionsOpen.value = false;
   openTabsPanelOpen.value = true;
   await loadOpenTabs();
 }
@@ -539,6 +550,10 @@ function discoveryStatusLabel(status: UrlDiscoveryStatus): string {
     return t('batch.discovery.unsupportedUrl');
   }
 
+  if (status === 'excluded') {
+    return t('batch.discovery.excluded');
+  }
+
   return t('batch.discovery.invalidUrl');
 }
 
@@ -547,7 +562,7 @@ function discoveryStatusVariant(status: UrlDiscoveryStatus): 'neutral' | 'succes
     return 'success';
   }
 
-  if (status === 'duplicate' || status === 'external') {
+  if (status === 'duplicate' || status === 'external' || status === 'excluded') {
     return 'warning';
   }
 
@@ -556,6 +571,22 @@ function discoveryStatusVariant(status: UrlDiscoveryStatus): 'neutral' | 'succes
   }
 
   return 'neutral';
+}
+
+function discoveryReasonLabel(item: UrlDiscoveryItem): string | null {
+  if (!item.reason || !item.pattern) {
+    return null;
+  }
+
+  if (item.reason === 'includePattern') {
+    return `${t('batch.discovery.includePattern')}: ${item.pattern}`;
+  }
+
+  if (item.reason === 'excludePattern') {
+    return `${t('batch.discovery.excludePattern')}: ${item.pattern}`;
+  }
+
+  return item.pattern;
 }
 
 function discoveryErrorMessage(error: unknown): string {
@@ -572,6 +603,7 @@ function discoveryErrorMessage(error: unknown): string {
 }
 
 async function openDiscoverUrls(): Promise<void> {
+  urlActionsOpen.value = false;
   discoverPanelOpen.value = true;
   discoveryError.value = null;
   discoveryRan.value = false;
@@ -610,6 +642,8 @@ async function runUrlDiscovery(): Promise<void> {
 
     const options: UrlDiscoveryOptions = {
       ...discoveryOptions.value,
+      includePattern: discoveryOptions.value.includePattern?.trim() ?? '',
+      excludePattern: discoveryOptions.value.excludePattern?.trim() ?? '',
       maxUrls: Math.min(1000, Math.max(1, Math.round(Number(discoveryOptions.value.maxUrls) || 100)))
     };
     discoveryOptions.value = options;
@@ -672,6 +706,7 @@ function addSelectedDiscoveredUrls(): void {
 }
 
 function triggerFileImport(): void {
+  urlActionsOpen.value = false;
   fileInput.value?.click();
 }
 
@@ -1035,51 +1070,66 @@ function runStatusLabel(batch: BatchRun): string {
       <template v-if="discoverPanelOpen">
         <Card>
           <div class="flex items-start justify-between gap-3">
-            <div class="flex min-w-0 items-start gap-2">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-600/15 dark:text-brand-400">
-                <Compass class="h-5 w-5" :stroke-width="2.1" aria-hidden="true" />
-              </div>
-              <div class="min-w-0">
-                <p class="field-label">{{ t('batch.discovery.discoverFromActiveTab') }}</p>
-                <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">{{ t('batch.discovery.discoverUrls') }}</h2>
-              </div>
+            <div class="min-w-0">
+              <p class="field-label">{{ t('batch.discovery.discoverFromActiveTab') }}</p>
+              <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">{{ t('batch.discovery.discoverUrls') }}</h2>
+              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">{{ t('batch.discovery.description') }}</p>
             </div>
             <Button size="xs" variant="ghost" @click="closeDiscoverUrls">
               <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
               {{ t('batch.batchRun') }}
             </Button>
           </div>
-
-          <div class="mt-4 grid gap-2">
-            <div>
-              <p class="field-label">{{ t('batch.discovery.sourcePage') }}</p>
-              <p class="mt-1 truncate rounded-md border border-ink-200 bg-ink-100 px-2.5 py-2 font-mono text-xs text-ink-700 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100">
-                {{ discoverySourceDisplay || '—' }}
-              </p>
-              <p v-if="discoverySourceTitle" class="mt-1 truncate text-xs font-medium text-ink-500 dark:text-ink-300">
-                {{ discoverySourceTitle }}
-              </p>
-            </div>
-
-            <p v-if="discoverySourceError" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
-              {{ discoverySourceError }}
-            </p>
-            <p v-else-if="discoverySourceDisplay && !discoverySourceSupported" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
-              {{ t('batch.discovery.unsupportedUrl') }}
-            </p>
-            <p v-else-if="!discoverySourceDisplay && !discoverySourceLoading" class="rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
-              {{ t('batch.discovery.noActiveTab') }}
-            </p>
-          </div>
         </Card>
 
         <Card>
-          <div class="grid gap-3">
+          <p class="field-label">{{ t('batch.discovery.sourcePage') }}</p>
+          <div class="mt-2 min-w-0">
+            <h3 class="break-words text-sm font-semibold text-ink-900 dark:text-ink-50">{{ discoverySourceDomain || '—' }}</h3>
+            <p class="mt-1 break-words text-sm text-ink-700 dark:text-ink-100">{{ discoverySourceTitleDisplay }}</p>
+            <p class="mt-2 break-all rounded-md border border-ink-200 bg-ink-100 px-2.5 py-2 font-mono text-xs leading-relaxed text-ink-700 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100">
+              {{ discoverySourceDisplay || '—' }}
+            </p>
+          </div>
+
+          <p v-if="discoverySourceIsSensitive" class="mt-3 rounded-md border border-amberline-100 bg-amberline-50 px-3 py-2 text-xs font-medium text-amberline-500 dark:border-amberline-500/30 dark:bg-amberline-500/15 dark:text-amberline-500">
+            {{ t('batch.discovery.sensitiveWarning') }}
+          </p>
+          <p v-if="discoverySourceError" class="mt-3 rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+            {{ discoverySourceError }}
+          </p>
+          <p v-else-if="discoverySourceDisplay && !discoverySourceSupported" class="mt-3 rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+            {{ t('batch.discovery.unsupportedUrl') }}
+          </p>
+          <p v-else-if="!discoverySourceDisplay && !discoverySourceLoading" class="mt-3 rounded-md border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-500 dark:border-coral-500/30 dark:bg-coral-500/10">
+            {{ t('batch.discovery.noActiveTab') }}
+          </p>
+        </Card>
+
+        <Card>
+          <div class="grid gap-4">
             <div class="grid gap-2">
+              <p class="field-label">{{ t('batch.discovery.scope') }}</p>
               <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
                 <input v-model="discoveryOptions.sameDomainOnly" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
                 {{ t('batch.discovery.sameDomainOnly') }}
               </label>
+            </div>
+
+            <div class="grid gap-2">
+              <p class="field-label">{{ t('batch.discovery.filters') }}</p>
+              <label class="grid gap-1">
+                <span class="text-xs font-medium text-ink-500 dark:text-ink-300">{{ t('batch.discovery.includePattern') }}</span>
+                <input v-model="discoveryOptions.includePattern" class="input font-mono text-xs" type="text" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-xs font-medium text-ink-500 dark:text-ink-300">{{ t('batch.discovery.excludePattern') }}</span>
+                <input v-model="discoveryOptions.excludePattern" class="input font-mono text-xs" type="text" />
+              </label>
+            </div>
+
+            <div class="grid gap-2">
+              <p class="field-label">{{ t('batch.discovery.cleaning') }}</p>
               <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
                 <input v-model="discoveryOptions.removeDuplicates" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
                 {{ t('batch.discovery.removeDuplicates') }}
@@ -1088,10 +1138,15 @@ function runStatusLabel(batch: BatchRun): string {
                 <input v-model="discoveryOptions.removeFragments" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
                 {{ t('batch.discovery.removeFragments') }}
               </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-ink-700 dark:text-ink-100">
+                <input v-model="discoveryOptions.normalizeTrailingSlash" class="h-4 w-4 rounded border-ink-300 text-brand-600" type="checkbox" />
+                {{ t('batch.discovery.normalizeTrailingSlash') }}
+              </label>
             </div>
 
             <label class="grid gap-1">
-              <span class="field-label">{{ t('batch.discovery.maxUrls') }}</span>
+              <span class="field-label">{{ t('batch.discovery.limit') }}</span>
+              <span class="text-xs font-medium text-ink-500 dark:text-ink-300">{{ t('batch.discovery.maxUrls') }}</span>
               <input v-model.number="discoveryOptions.maxUrls" class="input" min="1" max="1000" type="number" />
             </label>
 
@@ -1127,15 +1182,12 @@ function runStatusLabel(batch: BatchRun): string {
           <div class="mb-3 flex flex-wrap gap-1.5">
             <Badge variant="success">{{ discoveryCounts?.discovered ?? 0 }} {{ t('batch.discovery.discovered') }}</Badge>
             <Badge variant="primary">{{ selectedDiscoveryCount }} {{ t('batch.discovery.selected') }}</Badge>
-            <Badge variant="neutral">{{ discoveryCounts?.skipped ?? 0 }} {{ t('batch.discovery.skipped') }}</Badge>
             <Badge variant="neutral">{{ discoveryCounts?.duplicates ?? 0 }} {{ t('batch.discovery.duplicate') }}</Badge>
-            <Badge variant="neutral">{{ discoveryCounts?.unsupported ?? 0 }} {{ t('batch.discovery.unsupportedUrl') }}</Badge>
-            <Badge variant="neutral">{{ discoveryCounts?.externalExcluded ?? 0 }} {{ t('batch.discovery.externalUrl') }}</Badge>
-            <Badge variant="neutral">{{ discoveryCounts?.invalid ?? 0 }} {{ t('batch.discovery.invalidUrl') }}</Badge>
+            <Badge variant="neutral">{{ discoveryCounts?.skipped ?? 0 }} {{ t('batch.discovery.skipped') }}</Badge>
           </div>
 
           <div class="mb-3 grid gap-2">
-            <input v-model="discoverySearch" class="input" :placeholder="t('data.filterUrl')" />
+            <input v-model="discoverySearch" class="input" :placeholder="t('batch.discovery.searchUrls')" />
             <div class="flex flex-wrap gap-2">
               <Button size="xs" @click="selectAllDiscoveredUrls">{{ t('batch.discovery.selectAll') }}</Button>
               <Button size="xs" variant="ghost" @click="clearDiscoverySelection">
@@ -1166,10 +1218,11 @@ function runStatusLabel(batch: BatchRun): string {
               />
               <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 items-center gap-1.5">
-                  <p class="min-w-0 flex-1 truncate font-mono text-xs text-ink-900 dark:text-ink-50">{{ item.url }}</p>
+                  <p class="min-w-0 flex-1 break-all font-mono text-xs text-ink-900 dark:text-ink-50">{{ item.url }}</p>
                   <Badge :variant="discoveryStatusVariant(item.status)">{{ discoveryStatusLabel(item.status) }}</Badge>
                 </div>
                 <p v-if="item.text" class="mt-1 truncate text-xs text-ink-500 dark:text-ink-300">{{ item.text }}</p>
+                <p v-if="discoveryReasonLabel(item)" class="meta-line mt-0.5 truncate">{{ discoveryReasonLabel(item) }}</p>
                 <p v-if="item.status !== 'discovered' && item.rawHref" class="meta-line mt-0.5 truncate">{{ item.rawHref }}</p>
               </div>
             </label>
@@ -1198,23 +1251,48 @@ function runStatusLabel(batch: BatchRun): string {
       <Card>
         <div class="mb-2 flex items-center justify-between gap-2">
           <label class="field-label" for="batch-urls">{{ t('batch.urls') }}</label>
-          <div class="flex flex-wrap justify-end gap-1">
-            <Button size="xs" variant="ghost" @click="pasteUrls">
-              <Clipboard class="h-3.5 w-3.5" aria-hidden="true" />
-              {{ t('batch.paste') }}
-            </Button>
-            <Button size="xs" variant="ghost" @click="openTabsPicker">
+          <div class="relative">
+            <Button size="xs" variant="secondary" @click="urlActionsOpen = !urlActionsOpen">
               <Plus class="h-3.5 w-3.5" aria-hidden="true" />
-              {{ t('batch.addOpenTabs') }}
+              {{ t('batch.addUrls') }}
             </Button>
-            <Button size="xs" variant="ghost" @click="openDiscoverUrls">
-              <Compass class="h-3.5 w-3.5" aria-hidden="true" />
-              {{ t('batch.discovery.discoverUrls') }}
-            </Button>
-            <Button size="xs" variant="ghost" @click="triggerFileImport">
-              <FileUp class="h-3.5 w-3.5" aria-hidden="true" />
-              {{ t('batch.importFile') }}
-            </Button>
+            <div
+              v-if="urlActionsOpen"
+              class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-ink-200 bg-white shadow-lg dark:border-ink-700 dark:bg-ink-950"
+            >
+              <button
+                type="button"
+                class="focus-ring flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-700 hover:bg-ink-50 dark:text-ink-100 dark:hover:bg-ink-900"
+                @click="pasteUrls"
+              >
+                <Clipboard class="h-3.5 w-3.5 text-ink-500" aria-hidden="true" />
+                {{ t('batch.paste') }}
+              </button>
+              <button
+                type="button"
+                class="focus-ring flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-700 hover:bg-ink-50 dark:text-ink-100 dark:hover:bg-ink-900"
+                @click="openTabsPicker"
+              >
+                <Plus class="h-3.5 w-3.5 text-ink-500" aria-hidden="true" />
+                {{ t('batch.addOpenTabs') }}
+              </button>
+              <button
+                type="button"
+                class="focus-ring flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-700 hover:bg-ink-50 dark:text-ink-100 dark:hover:bg-ink-900"
+                @click="triggerFileImport"
+              >
+                <FileUp class="h-3.5 w-3.5 text-ink-500" aria-hidden="true" />
+                {{ t('batch.importFile') }}
+              </button>
+              <button
+                type="button"
+                class="focus-ring flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-700 hover:bg-ink-50 dark:text-ink-100 dark:hover:bg-ink-900"
+                @click="openDiscoverUrls"
+              >
+                <Compass class="h-3.5 w-3.5 text-ink-500" aria-hidden="true" />
+                {{ t('batch.discovery.discoverFromActiveTab') }}
+              </button>
+            </div>
             <input ref="fileInput" class="hidden" type="file" accept=".txt,.csv,text/plain,text/csv" @change="importUrlFile" />
           </div>
         </div>

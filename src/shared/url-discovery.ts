@@ -13,6 +13,9 @@ export const DEFAULT_URL_DISCOVERY_OPTIONS: UrlDiscoveryOptions = {
   sameDomainOnly: true,
   removeDuplicates: true,
   removeFragments: true,
+  normalizeTrailingSlash: false,
+  includePattern: '',
+  excludePattern: '',
   maxUrls: 100
 };
 
@@ -21,6 +24,9 @@ function normalizeDiscoveryOptions(options: UrlDiscoveryOptions): UrlDiscoveryOp
     sameDomainOnly: Boolean(options.sameDomainOnly),
     removeDuplicates: Boolean(options.removeDuplicates),
     removeFragments: Boolean(options.removeFragments),
+    normalizeTrailingSlash: Boolean(options.normalizeTrailingSlash),
+    includePattern: options.includePattern?.trim() ?? '',
+    excludePattern: options.excludePattern?.trim() ?? '',
     maxUrls: Math.min(1000, Math.max(1, Math.round(Number(options.maxUrls) || DEFAULT_URL_DISCOVERY_OPTIONS.maxUrls)))
   };
 }
@@ -38,18 +44,41 @@ export function isDiscoverableSourceUrl(url: string | undefined): url is string 
   }
 }
 
-function itemFromLink(link: RawDiscoveredLink, url: string, status: UrlDiscoveryStatus): UrlDiscoveryItem {
+function itemFromLink(
+  link: RawDiscoveredLink,
+  url: string,
+  status: UrlDiscoveryStatus,
+  reason?: string,
+  pattern?: string
+): UrlDiscoveryItem {
   return {
     id: `${link.index}-${status}-${url}`,
     url,
     text: link.text,
     status,
-    rawHref: link.href
+    rawHref: link.href,
+    reason,
+    pattern
   };
 }
 
 function countSkipped(counts: UrlDiscoveryCounts): number {
-  return counts.duplicates + counts.unsupported + counts.externalExcluded + counts.invalid;
+  return counts.duplicates + counts.unsupported + counts.externalExcluded + counts.patternExcluded + counts.invalid;
+}
+
+function normalizeTrailingSlash(url: URL): void {
+  if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+    url.pathname = url.pathname.replace(/\/+$/, '');
+  }
+}
+
+function patternMatches(pattern: string | undefined, url: string): boolean {
+  const normalizedPattern = pattern?.trim().toLowerCase();
+  if (!normalizedPattern) {
+    return false;
+  }
+
+  return url.toLowerCase().includes(normalizedPattern);
 }
 
 export function createUrlDiscoveryResult(
@@ -68,6 +97,7 @@ export function createUrlDiscoveryResult(
     duplicates: 0,
     unsupported: 0,
     externalExcluded: 0,
+    patternExcluded: 0,
     invalid: 0,
     skipped: 0
   };
@@ -113,11 +143,35 @@ export function createUrlDiscoveryResult(
       parsedUrl.hash = '';
     }
 
+    if (options.normalizeTrailingSlash) {
+      normalizeTrailingSlash(parsedUrl);
+    }
+
     const normalizedUrl = parsedUrl.toString();
     if (options.sameDomainOnly && parsedUrl.hostname !== sourceUrl.hostname) {
       counts.externalExcluded += 1;
       if (skippedPreviewItems.length < skippedPreviewLimit) {
         skippedPreviewItems.push(itemFromLink(link, normalizedUrl, 'external'));
+      }
+      continue;
+    }
+
+    if (options.includePattern && !patternMatches(options.includePattern, normalizedUrl)) {
+      counts.patternExcluded += 1;
+      if (skippedPreviewItems.length < skippedPreviewLimit) {
+        skippedPreviewItems.push(
+          itemFromLink(link, normalizedUrl, 'excluded', 'includePattern', options.includePattern)
+        );
+      }
+      continue;
+    }
+
+    if (options.excludePattern && patternMatches(options.excludePattern, normalizedUrl)) {
+      counts.patternExcluded += 1;
+      if (skippedPreviewItems.length < skippedPreviewLimit) {
+        skippedPreviewItems.push(
+          itemFromLink(link, normalizedUrl, 'excluded', 'excludePattern', options.excludePattern)
+        );
       }
       continue;
     }

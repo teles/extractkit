@@ -273,6 +273,9 @@ export type UrlDiscoveryOptions = {
   sameDomainOnly: boolean;
   removeDuplicates: boolean;
   removeFragments: boolean;
+  normalizeTrailingSlash: boolean;
+  includePattern?: string;
+  excludePattern?: string;
   maxUrls: number;
 };
 
@@ -283,7 +286,7 @@ export type RawDiscoveredLink = {
   text?: string;
 };
 
-export type UrlDiscoveryStatus = 'discovered' | 'duplicate' | 'unsupported' | 'external' | 'invalid';
+export type UrlDiscoveryStatus = 'discovered' | 'duplicate' | 'unsupported' | 'external' | 'invalid' | 'excluded';
 
 export type UrlDiscoveryItem = {
   id: string;
@@ -291,6 +294,8 @@ export type UrlDiscoveryItem = {
   text?: string;
   status: UrlDiscoveryStatus;
   rawHref?: string;
+  reason?: string;
+  pattern?: string;
 };
 
 export type UrlDiscoveryCounts = {
@@ -298,6 +303,7 @@ export type UrlDiscoveryCounts = {
   duplicates: number;
   unsupported: number;
   externalExcluded: number;
+  patternExcluded: number;
   invalid: number;
   skipped: number;
 };

@@ -112,6 +112,7 @@ export type TranslationKey =
   | 'batch.invalidUrls'
   | 'batch.duplicatesRemoved'
   | 'batch.paste'
+  | 'batch.addUrls'
   | 'batch.removeDuplicates'
   | 'batch.clear'
   | 'batch.addOpenTabs'
@@ -189,14 +190,19 @@ export type TranslationKey =
   | 'batch.selectAllSupported'
   | 'batch.discovery.discoverUrls'
   | 'batch.discovery.discoverFromActiveTab'
+  | 'batch.discovery.description'
   | 'batch.discovery.sourcePage'
   | 'batch.discovery.sameDomainOnly'
+  | 'batch.discovery.includePattern'
+  | 'batch.discovery.excludePattern'
   | 'batch.discovery.removeDuplicates'
   | 'batch.discovery.removeFragments'
+  | 'batch.discovery.normalizeTrailingSlash'
   | 'batch.discovery.maxUrls'
   | 'batch.discovery.runDiscovery'
   | 'batch.discovery.discoveredUrls'
   | 'batch.discovery.addSelectedUrls'
+  | 'batch.discovery.searchUrls'
   | 'batch.discovery.selectAll'
   | 'batch.discovery.clearSelection'
   | 'batch.discovery.noLinksFound'
@@ -205,9 +211,15 @@ export type TranslationKey =
   | 'batch.discovery.externalUrl'
   | 'batch.discovery.duplicate'
   | 'batch.discovery.invalidUrl'
+  | 'batch.discovery.excluded'
   | 'batch.discovery.discovered'
   | 'batch.discovery.selected'
   | 'batch.discovery.skipped'
+  | 'batch.discovery.scope'
+  | 'batch.discovery.filters'
+  | 'batch.discovery.cleaning'
+  | 'batch.discovery.limit'
+  | 'batch.discovery.sensitiveWarning'
   | 'batch.discovery.noActiveTab'
   | 'batch.discovery.permissionError'
   | 'batch.discovery.contentUnavailable'
@@ -533,6 +545,7 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.invalidUrls': 'Invalid URLs',
     'batch.duplicatesRemoved': 'duplicates removed',
     'batch.paste': 'Paste from clipboard',
+    'batch.addUrls': 'Add URLs',
     'batch.removeDuplicates': 'Remove duplicates',
     'batch.clear': 'Clear',
     'batch.addOpenTabs': 'Add open tabs',
@@ -610,14 +623,19 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.selectAllSupported': 'Select all supported',
     'batch.discovery.discoverUrls': 'Discover URLs',
     'batch.discovery.discoverFromActiveTab': 'Discover from active tab',
+    'batch.discovery.description': 'Find links already present in the active tab.',
     'batch.discovery.sourcePage': 'Source page',
     'batch.discovery.sameDomainOnly': 'Same domain only',
+    'batch.discovery.includePattern': 'Include pattern',
+    'batch.discovery.excludePattern': 'Exclude pattern',
     'batch.discovery.removeDuplicates': 'Remove duplicates',
     'batch.discovery.removeFragments': 'Remove fragments',
+    'batch.discovery.normalizeTrailingSlash': 'Normalize trailing slash',
     'batch.discovery.maxUrls': 'Max URLs',
     'batch.discovery.runDiscovery': 'Run discovery',
     'batch.discovery.discoveredUrls': 'Discovered URLs',
     'batch.discovery.addSelectedUrls': 'Add selected URLs',
+    'batch.discovery.searchUrls': 'Search URLs',
     'batch.discovery.selectAll': 'Select all',
     'batch.discovery.clearSelection': 'Clear selection',
     'batch.discovery.noLinksFound': 'No links found',
@@ -626,9 +644,16 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.discovery.externalUrl': 'External URL',
     'batch.discovery.duplicate': 'Duplicate',
     'batch.discovery.invalidUrl': 'Invalid URL',
+    'batch.discovery.excluded': 'Excluded',
     'batch.discovery.discovered': 'Discovered',
     'batch.discovery.selected': 'Selected',
     'batch.discovery.skipped': 'Skipped',
+    'batch.discovery.scope': 'Scope',
+    'batch.discovery.filters': 'Filters',
+    'batch.discovery.cleaning': 'Cleaning',
+    'batch.discovery.limit': 'Limit',
+    'batch.discovery.sensitiveWarning':
+      'This page may contain private content. Only discover URLs here if you trust the page context.',
     'batch.discovery.noActiveTab': 'No active tab found.',
     'batch.discovery.permissionError': 'Could not read links from the active tab.',
     'batch.discovery.contentUnavailable': 'Could not connect to the active tab. Reload the page and try again.',
@@ -953,6 +978,7 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.invalidUrls': 'URLs inválidas',
     'batch.duplicatesRemoved': 'duplicadas removidas',
     'batch.paste': 'Colar da área de transferência',
+    'batch.addUrls': 'Adicionar URLs',
     'batch.removeDuplicates': 'Remover duplicadas',
     'batch.clear': 'Limpar',
     'batch.addOpenTabs': 'Adicionar abas abertas',
@@ -1031,14 +1057,19 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.selectAllSupported': 'Selecionar todas suportadas',
     'batch.discovery.discoverUrls': 'Descobrir URLs',
     'batch.discovery.discoverFromActiveTab': 'Descobrir da aba ativa',
+    'batch.discovery.description': 'Encontre links já presentes na aba ativa.',
     'batch.discovery.sourcePage': 'Página de origem',
     'batch.discovery.sameDomainOnly': 'Apenas mesmo domínio',
+    'batch.discovery.includePattern': 'Padrão de inclusão',
+    'batch.discovery.excludePattern': 'Padrão de exclusão',
     'batch.discovery.removeDuplicates': 'Remover duplicadas',
     'batch.discovery.removeFragments': 'Remover fragmentos',
+    'batch.discovery.normalizeTrailingSlash': 'Normalizar barra final',
     'batch.discovery.maxUrls': 'Máximo de URLs',
     'batch.discovery.runDiscovery': 'Executar descoberta',
     'batch.discovery.discoveredUrls': 'URLs descobertas',
     'batch.discovery.addSelectedUrls': 'Adicionar URLs selecionadas',
+    'batch.discovery.searchUrls': 'Buscar URLs',
     'batch.discovery.selectAll': 'Selecionar todas',
     'batch.discovery.clearSelection': 'Limpar seleção',
     'batch.discovery.noLinksFound': 'Nenhum link encontrado',
@@ -1047,9 +1078,16 @@ export const dictionaries: Record<LocalePreference, Dictionary> = {
     'batch.discovery.externalUrl': 'URL externa',
     'batch.discovery.duplicate': 'Duplicada',
     'batch.discovery.invalidUrl': 'URL inválida',
+    'batch.discovery.excluded': 'Excluída',
     'batch.discovery.discovered': 'Descobertas',
     'batch.discovery.selected': 'Selecionadas',
     'batch.discovery.skipped': 'Ignoradas',
+    'batch.discovery.scope': 'Escopo',
+    'batch.discovery.filters': 'Filtros',
+    'batch.discovery.cleaning': 'Limpeza',
+    'batch.discovery.limit': 'Limite',
+    'batch.discovery.sensitiveWarning':
+      'Esta página pode conter conteúdo privado. Só descubra URLs aqui se você confia no contexto da página.',
     'batch.discovery.noActiveTab': 'Nenhuma aba ativa encontrada.',
     'batch.discovery.permissionError': 'Não foi possível ler links da aba ativa.',
     'batch.discovery.contentUnavailable':
