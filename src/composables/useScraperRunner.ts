@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue';
+import { ensureHostPermissionForUrl } from '../shared/host-permissions';
 import type { RunRecipeResponse } from '../shared/messaging';
 import { MESSAGE_RUN_RECIPE } from '../shared/messaging';
 import { generateOutputSchema } from '../shared/output-schema';
@@ -13,58 +14,6 @@ function hasRuntimeMessaging(): boolean {
   return typeof chrome !== 'undefined' && Boolean(chrome.runtime?.sendMessage);
 }
 
-function hasPermissionsApi(): boolean {
-  return typeof chrome !== 'undefined' && Boolean(chrome.permissions?.request);
-}
-
-function originPermissionFromUrl(url: string | undefined): string | null {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return null;
-    }
-
-    return `${parsedUrl.protocol}//${parsedUrl.hostname}/*`;
-  } catch {
-    return null;
-  }
-}
-
-function requestPermission(permissions: chrome.permissions.Permissions): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    chrome.permissions.request(permissions, (granted) => {
-      const chromeError = chrome.runtime.lastError;
-      if (chromeError) {
-        reject(new Error(chromeError.message));
-        return;
-      }
-
-      resolve(granted);
-    });
-  });
-}
-
-async function ensureHostPermission(tabUrl: string | undefined): Promise<void> {
-  const origin = originPermissionFromUrl(tabUrl);
-  if (!origin) {
-    return;
-  }
-
-  if (!hasPermissionsApi()) {
-    throw new Error('The Chrome permissions API is not available.');
-  }
-
-  const permissions = { origins: [origin] };
-  const granted = await requestPermission(permissions);
-  if (!granted) {
-    throw new Error(`Permission to access ${origin} was denied.`);
-  }
-}
-
 export function useScraperRunner() {
   async function runRecipe(recipe: Recipe, tabUrl?: string): Promise<RecipeRun | null> {
     running.value = true;
@@ -75,7 +24,7 @@ export function useScraperRunner() {
         throw new Error('Load the extension in Chrome to run recipes.');
       }
 
-      await ensureHostPermission(tabUrl);
+      await ensureHostPermissionForUrl(tabUrl);
 
       const response = (await chrome.runtime.sendMessage({
         type: MESSAGE_RUN_RECIPE,

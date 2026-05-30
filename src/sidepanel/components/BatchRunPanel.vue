@@ -33,6 +33,7 @@ import {
   normalizeUrlInput,
   validateBatchUrl
 } from '../../shared/batch-planner';
+import { ensureHostPermissionForUrl } from '../../shared/host-permissions';
 import type { TranslationKey } from '../../shared/i18n';
 import { MESSAGE_DISCOVER_URLS, type UrlDiscoveryResponse } from '../../shared/messaging';
 import type {
@@ -639,6 +640,8 @@ async function runUrlDiscovery(): Promise<void> {
     if (!discoverySourceSupported.value) {
       throw new Error(t('batch.discovery.unsupportedUrl'));
     }
+
+    await ensureHostPermissionForUrl(discoverySourceDisplay.value, t('batch.discovery.permissionError'));
 
     const options: UrlDiscoveryOptions = {
       ...discoveryOptions.value,

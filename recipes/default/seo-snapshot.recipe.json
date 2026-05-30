@@ -1,14 +1,14 @@
 {
   "id": "default-seo-snapshot",
-  "name": "SEO Snapshot",
-  "description": "Extracts a quick SEO overview from the current page.",
+  "name": "SEO Daily Snapshot",
+  "description": "Extracts a practical SEO overview from the current page for day-to-day audits.",
   "category": "seo",
-  "tags": ["seo", "metadata", "headings", "schema", "links"],
+  "tags": ["seo", "metadata", "headings", "schema", "links", "images"],
   "source": "default",
   "urlPatterns": ["*"],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "createdAt": "2026-05-23T00:00:00.000Z",
-  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "updatedAt": "2026-05-27T00:00:00.000Z",
   "fields": [
     {
       "id": "default-seo-snapshot-document-title",
@@ -46,12 +46,141 @@
       "selector": "meta[name=\"robots\"]",
       "extract": "attribute",
       "attribute": "content",
+      "transforms": ["trim"],
       "required": false
     },
     {
-      "id": "default-seo-snapshot-h1",
+      "id": "default-seo-snapshot-prev-url",
       "kind": "field",
-      "key": "h1",
+      "key": "prevUrl",
+      "selector": "link[rel=\"prev\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-next-url",
+      "kind": "field",
+      "key": "nextUrl",
+      "selector": "link[rel=\"next\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-amphtml",
+      "kind": "field",
+      "key": "amphtml",
+      "selector": "link[rel=\"amphtml\"]",
+      "extract": "attribute",
+      "attribute": "href",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-viewport",
+      "kind": "field",
+      "key": "viewport",
+      "selector": "meta[name=\"viewport\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-html-lang",
+      "kind": "field",
+      "key": "htmlLang",
+      "selector": "html",
+      "extract": "attribute",
+      "attribute": "lang",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-og-title",
+      "kind": "field",
+      "key": "ogTitle",
+      "selector": "meta[property=\"og:title\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-og-description",
+      "kind": "field",
+      "key": "ogDescription",
+      "selector": "meta[property=\"og:description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-og-image",
+      "kind": "field",
+      "key": "ogImage",
+      "selector": "meta[property=\"og:image\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-og-url",
+      "kind": "field",
+      "key": "ogUrl",
+      "selector": "meta[property=\"og:url\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-twitter-title",
+      "kind": "field",
+      "key": "twitterTitle",
+      "selector": "meta[name=\"twitter:title\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-twitter-description",
+      "kind": "field",
+      "key": "twitterDescription",
+      "selector": "meta[name=\"twitter:description\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["trim"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-twitter-image",
+      "kind": "field",
+      "key": "twitterImage",
+      "selector": "meta[name=\"twitter:image\"]",
+      "extract": "attribute",
+      "attribute": "content",
+      "transforms": ["absoluteUrl"],
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-h1-count",
+      "kind": "field",
+      "key": "h1Count",
+      "selector": "h1",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-h1-texts",
+      "kind": "field",
+      "key": "h1Texts",
       "selector": "h1",
       "extract": "text",
       "multiple": true,
@@ -59,12 +188,69 @@
       "required": false
     },
     {
-      "id": "default-seo-snapshot-json-ld",
-      "kind": "field",
-      "key": "jsonLd",
-      "selector": "script[type=\"application/ld+json\"]",
-      "extract": "json",
+      "id": "default-seo-snapshot-headings",
+      "kind": "group",
+      "key": "headings",
+      "selector": "h1, h2, h3, h4, h5, h6",
       "multiple": true,
+      "fields": [
+        {
+          "id": "default-seo-snapshot-heading-level",
+          "kind": "field",
+          "key": "level",
+          "selector": ":scope",
+          "extract": "tagName",
+          "required": false
+        },
+        {
+          "id": "default-seo-snapshot-heading-text",
+          "kind": "field",
+          "key": "text",
+          "selector": ":scope",
+          "extract": "text",
+          "transforms": ["trim", "removeExtraSpaces"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "default-seo-snapshot-images-count",
+      "kind": "field",
+      "key": "imagesCount",
+      "selector": "img",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-images-without-alt-count",
+      "kind": "field",
+      "key": "imagesWithoutAltCount",
+      "selector": "img:not([alt])",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-images-with-empty-alt-count",
+      "kind": "field",
+      "key": "imagesWithEmptyAltCount",
+      "selector": "img[alt=\"\"]",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-images-without-width-count",
+      "kind": "field",
+      "key": "imagesWithoutWidthCount",
+      "selector": "img:not([width])",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-images-without-height-count",
+      "kind": "field",
+      "key": "imagesWithoutHeightCount",
+      "selector": "img:not([height])",
+      "extract": "count",
       "required": false
     },
     {
@@ -76,17 +262,50 @@
       "required": false
     },
     {
-      "id": "default-seo-snapshot-images-count",
+      "id": "default-seo-snapshot-internal-links-count",
       "kind": "field",
-      "key": "imagesCount",
-      "selector": "img",
+      "key": "internalLinksCount",
+      "selector": "a[href^=\"/\"], a[href^=\"#\"]",
       "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-external-links-count",
+      "kind": "field",
+      "key": "externalLinksCount",
+      "selector": "a[href^=\"http://\"], a[href^=\"https://\"]",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-links-without-text-count",
+      "kind": "field",
+      "key": "linksWithoutTextCount",
+      "selector": "a[href]:empty",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-json-ld-count",
+      "kind": "field",
+      "key": "jsonLdCount",
+      "selector": "script[type=\"application/ld+json\"]",
+      "extract": "count",
+      "required": false
+    },
+    {
+      "id": "default-seo-snapshot-json-ld",
+      "kind": "field",
+      "key": "jsonLd",
+      "selector": "script[type=\"application/ld+json\"]",
+      "extract": "json",
+      "multiple": true,
       "required": false
     }
   ],
   "checks": [
     {
-      "id": "check-title-exists",
+      "id": "default-seo-snapshot-check-title-exists",
       "name": "Title tag exists",
       "description": "The page should have a title tag.",
       "selector": "title",
@@ -96,7 +315,7 @@
       "severity": "warning"
     },
     {
-      "id": "check-meta-description-exists",
+      "id": "default-seo-snapshot-check-meta-description-exists",
       "name": "Meta description exists",
       "description": "The page should have a meta description.",
       "selector": "meta[name=\"description\"]",
@@ -106,7 +325,7 @@
       "severity": "info"
     },
     {
-      "id": "check-canonical-exists",
+      "id": "default-seo-snapshot-check-canonical-exists",
       "name": "Canonical tag exists",
       "description": "The page should have a canonical link tag.",
       "selector": "link[rel=\"canonical\"]",
@@ -116,7 +335,17 @@
       "severity": "info"
     },
     {
-      "id": "check-single-h1",
+      "id": "default-seo-snapshot-check-html-lang-exists",
+      "name": "HTML lang exists",
+      "description": "The html element should include a lang attribute.",
+      "selector": "html[lang]",
+      "assertion": {
+        "type": "exists"
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "default-seo-snapshot-check-single-h1",
       "name": "Exactly one H1",
       "description": "The page should usually have exactly one H1.",
       "selector": "h1",
@@ -125,6 +354,39 @@
         "value": 1
       },
       "severity": "warning"
+    },
+    {
+      "id": "default-seo-snapshot-check-images-have-alt-attribute",
+      "name": "Images have alt attributes",
+      "description": "Images should include an alt attribute. Decorative images may use an empty alt value.",
+      "selector": "img:not([alt])",
+      "assertion": {
+        "type": "countEquals",
+        "value": 0
+      },
+      "severity": "warning"
+    },
+    {
+      "id": "default-seo-snapshot-check-images-have-width",
+      "name": "Images have width attributes",
+      "description": "Images should include width attributes when possible to reduce layout shift.",
+      "selector": "img:not([width])",
+      "assertion": {
+        "type": "countEquals",
+        "value": 0
+      },
+      "severity": "info"
+    },
+    {
+      "id": "default-seo-snapshot-check-images-have-height",
+      "name": "Images have height attributes",
+      "description": "Images should include height attributes when possible to reduce layout shift.",
+      "selector": "img:not([height])",
+      "assertion": {
+        "type": "countEquals",
+        "value": 0
+      },
+      "severity": "info"
     }
   ]
 }

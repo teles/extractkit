@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue';
+import { ensureHostPermissionsForUrls } from '../shared/host-permissions';
 import type { BatchRunResponse } from '../shared/messaging';
 import {
   MESSAGE_PAUSE_BATCH_RUN,
@@ -24,55 +25,6 @@ const error = ref<string | null>(null);
 
 function hasRuntimeMessaging(): boolean {
   return typeof chrome !== 'undefined' && Boolean(chrome.runtime?.sendMessage);
-}
-
-function hasPermissionsApi(): boolean {
-  return typeof chrome !== 'undefined' && Boolean(chrome.permissions?.request);
-}
-
-function originPermissionFromUrl(url: string): string | null {
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return null;
-    }
-
-    return `${parsedUrl.protocol}//${parsedUrl.hostname}/*`;
-  } catch {
-    return null;
-  }
-}
-
-function requestPermission(permissions: chrome.permissions.Permissions): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    chrome.permissions.request(permissions, (granted) => {
-      const chromeError = chrome.runtime.lastError;
-      if (chromeError) {
-        reject(new Error(chromeError.message));
-        return;
-      }
-
-      resolve(granted);
-    });
-  });
-}
-
-async function ensureHostPermissions(urls: string[]): Promise<void> {
-  const origins = Array.from(
-    new Set(urls.map(originPermissionFromUrl).filter((origin): origin is string => Boolean(origin)))
-  );
-  if (origins.length === 0) {
-    return;
-  }
-
-  if (!hasPermissionsApi()) {
-    throw new Error('The Chrome permissions API is not available.');
-  }
-
-  const granted = await requestPermission({ origins });
-  if (!granted) {
-    throw new Error('Permission to access the batch URLs was denied.');
-  }
 }
 
 function sendBatchMessage(message: unknown): Promise<BatchRunResponse> {
@@ -117,7 +69,7 @@ export function useBatchRuns() {
         throw new Error('Load the extension in Chrome to run batches.');
       }
 
-      await ensureHostPermissions(input.urls);
+      await ensureHostPermissionsForUrls(input.urls, 'Permission to access the batch URLs was denied.');
       const response = await sendBatchMessage({
         type: MESSAGE_START_BATCH_RUN,
         ...input
