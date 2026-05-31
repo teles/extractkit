@@ -7,6 +7,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
-    passWithNoTests: true
+    passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      include: ['src/shared/**/*.ts'],
+      exclude: ['src/shared/types.ts', 'src/shared/i18n.ts', 'src/shared/default-recipes.ts']
+    }
   }
 });
