@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_BATCH_RUN_OPTIONS,
   createBatchPlan,
+  DEFAULT_BATCH_RUN_OPTIONS,
   isSupportedBatchUrl,
   normalizeUrlInput,
   validateBatchUrl
@@ -115,7 +115,11 @@ describe('createBatchPlan', () => {
   });
 
   it('estimates duration as a positive number', () => {
-    const plan = createBatchPlan(['https://example.com/x', 'https://example.com/y'], [recipeA], DEFAULT_BATCH_RUN_OPTIONS);
+    const plan = createBatchPlan(
+      ['https://example.com/x', 'https://example.com/y'],
+      [recipeA],
+      DEFAULT_BATCH_RUN_OPTIONS
+    );
     expect(plan.estimatedDurationMs).toBeGreaterThan(0);
   });
 });

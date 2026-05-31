@@ -78,9 +78,7 @@ describe('CSV exports', () => {
   });
 
   it('createNestedCollectionCsvs emits one file per object-array field', () => {
-    const files = createNestedCollectionCsvs([
-      makeRun({ data: { items: [{ a: 1 }, { a: 2 }] } })
-    ]);
+    const files = createNestedCollectionCsvs([makeRun({ data: { items: [{ a: 1 }, { a: 2 }] } })]);
     expect(files).toHaveLength(1);
     expect(files[0].fieldKey).toBe('items');
     expect(files[0].csv).toContain('itemIndex');

@@ -81,10 +81,7 @@ describe('normalizeRecipe', () => {
           kind: 'group',
           key: 'items',
           selector: '.item',
-          fields: [
-            { kind: 'field', key: 'a', selector: 'a', extract: 'text' },
-            { kind: 'field' }
-          ]
+          fields: [{ kind: 'field', key: 'a', selector: 'a', extract: 'text' }, { kind: 'field' }]
         }
       ]
     });

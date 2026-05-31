@@ -19,17 +19,13 @@ describe('resolveProcessingViewport', () => {
   });
 
   it('resolves preset dimensions', () => {
-    const result = resolveProcessingViewport(
-      preferences({ processingViewport: { preset: 'desktop-1920x1080' } })
-    );
+    const result = resolveProcessingViewport(preferences({ processingViewport: { preset: 'desktop-1920x1080' } }));
     expect(result).toMatchObject({ width: 1920, height: 1080, source: 'preset' });
     expect(result.label).toContain('1920');
   });
 
   it('resolves the mobile preset', () => {
-    const result = resolveProcessingViewport(
-      preferences({ processingViewport: { preset: 'mobile-390x844' } })
-    );
+    const result = resolveProcessingViewport(preferences({ processingViewport: { preset: 'mobile-390x844' } }));
     expect(result).toMatchObject({ width: 390, height: 844, source: 'preset' });
   });
 

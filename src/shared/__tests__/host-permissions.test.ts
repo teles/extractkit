@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ensureHostPermissionForUrl, ensureHostPermissionsForUrls, hostPermissionOriginFromUrl } from '../host-permissions';
+import {
+  ensureHostPermissionForUrl,
+  ensureHostPermissionsForUrls,
+  hostPermissionOriginFromUrl
+} from '../host-permissions';
 
 describe('hostPermissionOriginFromUrl', () => {
   it('returns null for empty or invalid input', () => {
@@ -19,10 +23,7 @@ describe('hostPermissionOriginFromUrl', () => {
 
 type ChromeStub = {
   permissions?: {
-    request: (
-      _permissions: chrome.permissions.Permissions,
-      callback: (granted: boolean) => void
-    ) => void;
+    request: (_permissions: chrome.permissions.Permissions, callback: (granted: boolean) => void) => void;
   };
   runtime: { lastError: { message: string } | undefined };
 };
@@ -49,9 +50,7 @@ describe('ensureHostPermissionForUrl', () => {
   });
 
   it('throws when the user denies the permission', async () => {
-    const request = vi.fn(
-      (_p: chrome.permissions.Permissions, cb: (granted: boolean) => void) => cb(false)
-    );
+    const request = vi.fn((_p: chrome.permissions.Permissions, cb: (granted: boolean) => void) => cb(false));
     setChrome({ permissions: { request }, runtime: { lastError: undefined } });
     await expect(ensureHostPermissionForUrl('https://example.com', 'denied')).rejects.toThrow('denied');
     expect(request).toHaveBeenCalledWith({ origins: ['https://example.com/*'] }, expect.any(Function));
@@ -91,10 +90,7 @@ describe('ensureHostPermissionsForUrls', () => {
   it('requests deduplicated origins', async () => {
     const request = vi.fn((_p: chrome.permissions.Permissions, cb: (granted: boolean) => void) => cb(true));
     setChrome({ permissions: { request }, runtime: { lastError: undefined } });
-    await ensureHostPermissionsForUrls(
-      ['https://a.com/x', 'https://a.com/y', 'https://b.com'],
-      'denied'
-    );
+    await ensureHostPermissionsForUrls(['https://a.com/x', 'https://a.com/y', 'https://b.com'], 'denied');
     expect(request).toHaveBeenCalledTimes(1);
     const arg = request.mock.calls[0][0] as { origins: string[] };
     expect(arg.origins.sort()).toEqual(['https://a.com/*', 'https://b.com/*']);

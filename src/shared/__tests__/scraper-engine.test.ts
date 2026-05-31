@@ -107,7 +107,9 @@ describe('runRecipe', () => {
         { id: '4', kind: 'field', key: 'li_count', selector: 'li', extract: 'count' },
         { id: '5', kind: 'field', key: 'tag', selector: 'h1', extract: 'tagName' }
       ]),
-      html('<div><b>x</b></div><script type="application/json">{"a":1}</script><main></main><ul><li/><li/></ul><h1></h1>'),
+      html(
+        '<div><b>x</b></div><script type="application/json">{"a":1}</script><main></main><ul><li/><li/></ul><h1></h1>'
+      ),
       ctx
     );
 
@@ -129,9 +131,7 @@ describe('runRecipe', () => {
 
   it('warns on required missing values', () => {
     const result = runRecipe(
-      recipeWith([
-        { id: '1', kind: 'field', key: 'title', selector: 'h1', extract: 'text', required: true }
-      ]),
+      recipeWith([{ id: '1', kind: 'field', key: 'title', selector: 'h1', extract: 'text', required: true }]),
       html(''),
       ctx
     );
@@ -171,9 +171,7 @@ describe('runRecipe', () => {
 
   it('captures jsonParse transform errors', () => {
     const result = runRecipe(
-      recipeWith([
-        { id: '1', kind: 'field', key: 'json', selector: 'h1', extract: 'text', transforms: ['jsonParse'] }
-      ]),
+      recipeWith([{ id: '1', kind: 'field', key: 'json', selector: 'h1', extract: 'text', transforms: ['jsonParse'] }]),
       html('<h1>not-json</h1>'),
       ctx
     );

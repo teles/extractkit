@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   CONTENT_DISCOVER_URLS,
   CONTENT_RUN_RECIPE,
+  isContentMessage,
+  isPanelMessage,
   MESSAGE_DISCOVER_URLS,
   MESSAGE_GET_CURRENT_TAB,
   MESSAGE_PAUSE_BATCH_RUN,
@@ -9,9 +11,7 @@ import {
   MESSAGE_RUN_RECIPE,
   MESSAGE_START_BATCH_RUN,
   MESSAGE_STOP_BATCH_RUN,
-  MESSAGE_VIEW_BATCH_TAB,
-  isContentMessage,
-  isPanelMessage
+  MESSAGE_VIEW_BATCH_TAB
 } from '../messaging';
 
 describe('isPanelMessage', () => {

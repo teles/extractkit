@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { statusWithReviewResults } from '../run-status';
 import type { RecipeRun } from '../types';
 
-function reviewable(overrides: Partial<Pick<RecipeRun, 'validation' | 'checks'>> = {}): Pick<
-  RecipeRun,
-  'validation' | 'checks'
-> {
+function reviewable(
+  overrides: Partial<Pick<RecipeRun, 'validation' | 'checks'>> = {}
+): Pick<RecipeRun, 'validation' | 'checks'> {
   return { validation: undefined, checks: undefined, ...overrides };
 }
 

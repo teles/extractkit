@@ -26,9 +26,9 @@ describe('runRecipeChecks', () => {
   it('handles exists and notExists', () => {
     const doc = html('<h1>x</h1>');
     expect(runRecipeChecks([check({ assertion: { type: 'exists' } })], doc).status).toBe('passed');
-    expect(
-      runRecipeChecks([check({ id: 'c2', selector: 'h2', assertion: { type: 'notExists' } })], doc).status
-    ).toBe('passed');
+    expect(runRecipeChecks([check({ id: 'c2', selector: 'h2', assertion: { type: 'notExists' } })], doc).status).toBe(
+      'passed'
+    );
     expect(
       runRecipeChecks([check({ id: 'c3', selector: 'h2', assertion: { type: 'exists' }, severity: 'warning' })], doc)
         .status
@@ -40,21 +40,20 @@ describe('runRecipeChecks', () => {
     expect(runRecipeChecks([check({ selector: 'li', assertion: { type: 'countEquals', value: 3 } })], doc).status).toBe(
       'passed'
     );
-    expect(runRecipeChecks([check({ selector: 'li', assertion: { type: 'countGreaterThan', value: 1 } })], doc).status).toBe(
-      'passed'
-    );
+    expect(
+      runRecipeChecks([check({ selector: 'li', assertion: { type: 'countGreaterThan', value: 1 } })], doc).status
+    ).toBe('passed');
     expect(
       runRecipeChecks([check({ selector: 'li', assertion: { type: 'countLessThanOrEqual', value: 3 } })], doc).status
     ).toBe('passed');
     expect(
-      runRecipeChecks([check({ selector: 'li', assertion: { type: 'countLessThan', value: 1 }, severity: 'error' })], doc)
-        .status
-    ).toBe('error');
-    expect(
       runRecipeChecks(
-        [check({ selector: 'li', assertion: { type: 'countGreaterThanOrEqual', value: 3 } })],
+        [check({ selector: 'li', assertion: { type: 'countLessThan', value: 1 }, severity: 'error' })],
         doc
       ).status
+    ).toBe('error');
+    expect(
+      runRecipeChecks([check({ selector: 'li', assertion: { type: 'countGreaterThanOrEqual', value: 3 } })], doc).status
     ).toBe('passed');
   });
 
@@ -98,10 +97,8 @@ describe('runRecipeChecks', () => {
   it('handles eachElementMustHave and eachElementShouldHave', () => {
     const doc = html('<article><h2>a</h2></article><article><h2>b</h2></article>');
     expect(
-      runRecipeChecks(
-        [check({ selector: 'article', assertion: { type: 'eachElementMustHave', selector: 'h2' } })],
-        doc
-      ).status
+      runRecipeChecks([check({ selector: 'article', assertion: { type: 'eachElementMustHave', selector: 'h2' } })], doc)
+        .status
     ).toBe('passed');
 
     const failing = runRecipeChecks(
@@ -111,7 +108,13 @@ describe('runRecipeChecks', () => {
     expect(failing.status).toBe('error');
 
     const skipped = runRecipeChecks(
-      [check({ selector: 'section', assertion: { type: 'eachElementShouldHave', selector: 'h2' }, severity: 'warning' })],
+      [
+        check({
+          selector: 'section',
+          assertion: { type: 'eachElementShouldHave', selector: 'h2' },
+          severity: 'warning'
+        })
+      ],
       doc
     );
     expect(skipped.results[0].status).toBe('skipped');

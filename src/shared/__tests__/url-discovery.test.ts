@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_URL_DISCOVERY_OPTIONS, createUrlDiscoveryResult, isDiscoverableSourceUrl } from '../url-discovery';
 import type { RawDiscoveredLink, UrlDiscoveryOptions } from '../types';
+import { createUrlDiscoveryResult, DEFAULT_URL_DISCOVERY_OPTIONS, isDiscoverableSourceUrl } from '../url-discovery';
 
 function link(index: number, href: string, absoluteUrl = href, text?: string): RawDiscoveredLink {
   return { index, href, absoluteUrl, text };

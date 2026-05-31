@@ -7,10 +7,13 @@ describe('validateOutput', () => {
   });
 
   it('flags type mismatches', () => {
-    const result = validateOutput({ a: 'x' }, {
-      type: 'object',
-      properties: { a: { type: 'number' } }
-    });
+    const result = validateOutput(
+      { a: 'x' },
+      {
+        type: 'object',
+        properties: { a: { type: 'number' } }
+      }
+    );
     expect(result.status).toBe('invalid');
     expect(result.issues[0]).toMatchObject({ path: '/a', keyword: 'type' });
   });
