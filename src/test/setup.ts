@@ -36,5 +36,6 @@ Object.defineProperty(globalThis, 'chrome', {
     },
     tabs: { query: (_q: unknown, cb: (tabs: unknown[]) => void) => cb([]) }
   },
-  writable: true
+  writable: true,
+  configurable: true
 });
